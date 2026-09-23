@@ -30,6 +30,9 @@
                         </div>
                     </div>
                 </li>
+                <li>
+                    <a class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400" href="javascript:void(0)">4</a>
+                </li>
             </ul>
         </div>
     </div>
@@ -45,14 +48,14 @@
         </div>
         <div class="flex-1">
             <x-label for="middleName">{{ __('Middle Name') }} </x-label>
-            <x-input id="middleName" type="text" name="middleName" :value="old('middleName')" autofocus autocomplete="middleName" />
+            <x-input id="middleName" type="text" name="middleName" :value="old('middleName')" autocomplete="middleName" />
         </div>
     </div>
 
     <div class="flex space-x-4">
         <div class="flex-1">
             <x-label for="lastName">{{ __('Last Name') }} <span class="text-red-500">*</span></x-label>
-            <x-input id="lastName" type="text" name="lastName" :value="old('lastName')" required autofocus autocomplete="lastName" />
+            <x-input id="lastName" type="text" name="lastName" :value="old('lastName')" required autocomplete="lastName" />
         </div>
         <div class="flex-1">
             <x-label for="gender">{{ __('Gender') }} <span class="text-red-500">*</span></x-label>
@@ -61,7 +64,7 @@
                 <div class="m-3">
                     <!-- Start -->
                     <label class="flex items-center">
-                    <input type="radio" class="form-radio" id="gender_male" name="gender" value="Male" {{ old('gender') == 'Male' ? 'checked' : '' }} required checked />
+                    <input type="radio" class="form-radio" id="gender_male" name="gender" value="Male" {{ old('gender', 'Male') == 'Male' ? 'checked' : '' }} required />
                         <span class="text-sm ml-2">Male</span>
                     </label>
                     <!-- End -->
@@ -81,7 +84,7 @@
 
     <div>
         <x-label for="mobileNumber">{{ __('Mobile Number') }} <span class="text-red-500">*</span></x-label>
-        <x-input id="mobileNumber" type="text" name="mobileNumber" :value="old('mobileNumber')" required autofocus autocomplete="mobileNumber" />
+        <x-input id="mobileNumber" type="text" name="mobileNumber" :value="old('mobileNumber')" required autocomplete="tel" inputmode="tel" />
     </div>
 
     <div>

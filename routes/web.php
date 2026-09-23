@@ -21,7 +21,8 @@ use App\Http\Controllers\{
     TestimonialsController,
     EmailSubscriptionController,
     EmailConfigController,
-    PaymentGatewayConfigController
+    PaymentGatewayConfigController,
+    RegistrationFormController
 };
 
 // Student Controllers
@@ -80,6 +81,9 @@ Route::controller(WebsiteController::class)->group(function () {
     Route::get('/contact', 'contact')->name('contact');
     Route::post('/email-subscription', 'email_subscription')->name('email-subscription');
 });
+
+// Printable (offline) application form, mirroring the online registration form
+Route::get('/register/application-form', [RegistrationFormController::class, 'download'])->name('register.form-pdf');
 
 /*
 |--------------------------------------------------------------------------

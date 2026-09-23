@@ -159,7 +159,9 @@
         }
 
         // Event listener for checkbox changes
-        $('input[type="checkbox"]').on('change', function () {
+        const $objectives = $('input[name="selected_objective[]"]');
+
+        $objectives.on('change', function () {
             const $checkbox = $(this);
             const isChecked = $checkbox.is(':checked');
             const $label = $checkbox.closest('label');
@@ -194,7 +196,8 @@
             updateOrderSummary();
         });
 
-        // Initialize order summary on page load
+        // Initialize order summary on page load, including objectives re-checked after a failed submission
         updateOrderSummary();
+        $objectives.filter(':checked').trigger('change');
     });
 </script>

@@ -6,3 +6,8 @@
 @import 'additional-styles/flatpickr.css';
 
 @import 'tailwindcss/utilities';
+
+/* Hide Alpine-controlled elements until Alpine has initialised */
+[x-cloak] {
+    display: none !important;
+}

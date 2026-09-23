@@ -44,11 +44,11 @@
     <div class="flex space-x-4">
         <div class="flex-1">
             <x-label for="weight">{{ __('Weight (kg)') }} </x-label>
-            <x-input id="weight" type="text" name="weight" :value="old('weight')" autofocus autocomplete="weight" />
+            <x-input id="weight" type="text" name="weight" :value="old('weight')" inputmode="decimal" placeholder="e.g. 75" />
         </div>
         <div class="flex-1">
             <x-label for="height">{{ __('Height (ft)') }} </x-label>
-            <x-input id="height" type="text" name="height" :value="old('height')" autofocus autocomplete="height" />
+            <x-input id="height" type="text" name="height" :value="old('height')" inputmode="decimal" placeholder="e.g. 5.8" />
         </div>
     </div>
 

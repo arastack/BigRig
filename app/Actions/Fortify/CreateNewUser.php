@@ -7,8 +7,10 @@ use App\Models\Medical;
 use App\Models\Subscription;
 use App\Models\TrainingObjective;
 use App\Models\EnrolmentBatch;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Laravel\Jetstream\Jetstream;
 
@@ -25,6 +27,7 @@ class CreateNewUser implements CreatesNewUsers
     {
         Validator::make($input, [
             'firstName' => ['required', 'string', 'max:255'],
+            'middleName' => ['nullable', 'string', 'max:255'],
             'lastName' => ['required', 'string', 'max:255'],
             'gender' => ['required', 'string', 'in:Male,Female'],
             'mobileNumber' => ['required', 'string', 'max:20', 'unique:users'],
@@ -39,87 +42,88 @@ class CreateNewUser implements CreatesNewUsers
             'alcohol' => ['required', 'string', 'in:No,Often,Casually,Daily User'],
             'prescribed_medication' => ['nullable', 'string'],
             'failed_drug_test' => ['nullable', 'string'],
-            'selected_objective' => [
-                'required',
-                'array', // Enforce that it must be an array
-                'min:1', // At least one item must be selected
-                function ($attribute, $value, $fail) {
-                    $validObjectives = ['1', '2', '3', '4']; // predefined list of valid objectives
-
-                    foreach ($value as $objective) {
-                        if (!in_array($objective, $validObjectives)) {
-                            $fail("The selected objective {$objective} is invalid.");
-                        }
-                    }
-                },
-            ],
+            'selected_objective' => ['required', 'array', 'min:1'],
+            'selected_objective.*' => ['integer', 'exists:training_objectives,id'],
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
+        ], [
+            'selected_objective.required' => 'Please select at least one training objective.',
+            'selected_objective.*.exists' => 'One of the selected training objectives is no longer available.',
         ])->validate();
 
         $activeBatch = EnrolmentBatch::where('active_batch', true)->first();
 
-        // Create the user (without role_id)
-        $user = User::create([
-            'enrolment_batch_id' => $activeBatch->id,
-            'firstName' => $input['firstName'],
-            'middleName' => $input['middleName'] ?? null,
-            'lastName' => $input['lastName'],
-            'gender' => $input['gender'],
-            'mobileNumber' => $input['mobileNumber'],
-            'email' => $input['email'],
-            'password' => Hash::make($input['password']),
-            'profile_photo_path' => null,
-            'user_active' => 0,
-        ]);
+        if (! $activeBatch) {
+            throw ValidationException::withMessages([
+                'selected_objective' => 'Enrolment is currently closed. Please check back later or contact us.',
+            ]);
+        }
 
-        // Attach default role via pivot table
-        $user->roles()->attach(10);
+        // Create the user and all related records atomically, so a failure part-way
+        // does not leave an orphaned account that blocks the applicant from retrying.
+        return DB::transaction(function () use ($input, $activeBatch) {
+            // Create the user (without role_id)
+            $user = User::create([
+                'enrolment_batch_id' => $activeBatch->id,
+                'firstName' => $input['firstName'],
+                'middleName' => $input['middleName'] ?? null,
+                'lastName' => $input['lastName'],
+                'gender' => $input['gender'],
+                'mobileNumber' => $input['mobileNumber'],
+                'email' => $input['email'],
+                'password' => Hash::make($input['password']),
+                'profile_photo_path' => null,
+                'user_active' => 0,
+            ]);
 
-        // Store medical details
-        Medical::create([
-            'user_id' => $user->id,
-            'weight' => $input['weight'],
-            'height' => $input['height'],
-            'visual_impairment' => $input['visual_impairment'],
-            'hearing_aid' => $input['hearing_aid'],
-            'physical_disability' => $input['physical_disability'],
-            'weed' => $input['weed'],
-            'alcohol' => $input['alcohol'],
-            'prescribed_medication' => $input['prescribed_medication'],
-            'failed_drug_test' => $input['failed_drug_test'],
-            'attachments' => $input['attachments'] ?? null,
-        ]);
+            // Attach default role via pivot table
+            $user->roles()->attach(10);
 
-        // Fetch the selected objectives from the 'selected_objective' array
-        $selectedObjectives = TrainingObjective::whereIn('id', $input['selected_objective'])->get();
+            // Store medical details
+            Medical::create([
+                'user_id' => $user->id,
+                'weight' => $input['weight'] ?? null,
+                'height' => $input['height'] ?? null,
+                'visual_impairment' => $input['visual_impairment'],
+                'hearing_aid' => $input['hearing_aid'],
+                'physical_disability' => $input['physical_disability'],
+                'weed' => $input['weed'],
+                'alcohol' => $input['alcohol'],
+                'prescribed_medication' => $input['prescribed_medication'] ?? null,
+                'failed_drug_test' => $input['failed_drug_test'] ?? null,
+                'attachments' => $input['attachments'] ?? null,
+            ]);
+
+            // Fetch the selected objectives from the 'selected_objective' array
+            $selectedObjectives = TrainingObjective::whereIn('id', $input['selected_objective'])->get();
 
 
-        // Calculate the subtotal (sum of prices of selected objectives)
-        $subtotal = $selectedObjectives->sum(function($objective) {
-            return $objective->price;
+            // Calculate the subtotal (sum of prices of selected objectives)
+            $subtotal = $selectedObjectives->sum(function($objective) {
+                return $objective->price;
+            });
+
+            // Assume a tax rate of 7.5%
+            $taxRate = 0.075;
+
+            // Calculate the tax amount based on the subtotal
+            $tax = $subtotal * $taxRate;
+
+            // Calculate the total amount (subtotal + tax)
+            $totalAmount = $subtotal + $tax;
+
+            // Store subscription details
+            Subscription::create([
+                'user_id' => $user->id,
+                'payment_reference' => null,
+                'objectives' => json_encode(array_map('intval', $input['selected_objective'])),
+                'subtotal' => $subtotal, // Store the subtotal
+                'tax' => $tax,           // Store the tax amount
+                'total_amount' => $totalAmount, // Store the total amount (subtotal + tax)
+                'payment_status' => 'pending',
+                'payment_method' => null,
+            ]);
+
+            return $user;
         });
-
-        // Assume a tax rate of 7.5%
-        $taxRate = 0.075;
-
-        // Calculate the tax amount based on the subtotal
-        $tax = $subtotal * $taxRate;
-
-        // Calculate the total amount (subtotal + tax)
-        $totalAmount = $subtotal + $tax;
-
-        // Store subscription details
-        Subscription::create([
-            'user_id' => $user->id,
-            'payment_reference' => null,
-            'objectives' => json_encode(array_map('intval', $input['selected_objective'])),
-            'subtotal' => $subtotal, // Store the subtotal
-            'tax' => $tax,           // Store the tax amount
-            'total_amount' => $totalAmount, // Store the total amount (subtotal + tax)
-            'payment_status' => 'pending',
-            'payment_method' => null,
-        ]);
-
-        return $user;
     }
 }
