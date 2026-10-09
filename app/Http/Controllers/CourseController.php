@@ -9,31 +9,59 @@ use App\Models\TrainingObjective;
 use App\Models\TrainingSchedule;
 use App\Models\Curriculum;
 use App\Models\CourseMaterial;
+use App\Models\StudentInstructorDistribution;
 
 class CourseController extends Controller
 {
     public function index()
     {
-        // Retrieve all training objectives in a specific order (e.g., by `id`)
-        $objectives = TrainingObjective::orderBy('price', 'asc')->get();
-        $schedules = TrainingSchedule::with(['instructor', 'course', 'topic'])
-            ->whereBetween('schedule_date', [
-                Carbon::now()->startOfWeek(),  // Start of the week (Sunday)
-                Carbon::now()->endOfWeek()     // End of the week (Saturday)
-            ])
-            ->orderBy('schedule_date', 'asc')
+        $courses = TrainingObjective::orderByDesc('price')
+            ->withCount(['curriculum', 'materials'])
             ->get();
 
-        return view('pages/course/index', compact('objectives', 'schedules'));  
+        $enrolled = StudentInstructorDistribution::whereHas('student', fn ($q) => $q->whereNull('suspended_at'))
+            ->selectRaw('course_id, COUNT(DISTINCT student_id) as total')
+            ->groupBy('course_id')
+            ->pluck('total', 'course_id');
+
+        $upcoming = TrainingSchedule::whereBetween('schedule_date', [today(), today()->addDays(7)])
+            ->selectRaw('course_id, COUNT(*) as total')
+            ->groupBy('course_id')
+            ->pluck('total', 'course_id');
+
+        $thisWeek = TrainingSchedule::with(['instructor', 'course', 'topic'])
+            ->whereBetween('schedule_date', [today(), today()->addDays(7)])
+            ->orderBy('schedule_date')->orderBy('time_start')
+            ->take(10)
+            ->get();
+
+        return view('pages/course/index', compact('courses', 'enrolled', 'upcoming', 'thisWeek'));
     }
 
     public function show($id)
     {
-        $objective = TrainingObjective::findOrFail($id);
-        $curriculum = Curriculum::where('objective_id', $id)->get();
-        $materials = CourseMaterial::where('objective_id', $id)->get();
+        $course = TrainingObjective::findOrFail($id);
+        $curriculum = Curriculum::where('objective_id', $id)->orderBy('id')->get();
+        $materials = CourseMaterial::with('uploadedBy')->where('objective_id', $id)->latest()->get();
 
-        return view('pages/course/course-details', compact('objective', 'curriculum', 'materials'));
+        $students = StudentInstructorDistribution::with(['student', 'instructor', 'batch'])
+            ->where('course_id', $id)
+            ->whereHas('student', fn ($q) => $q->whereNull('suspended_at'))
+            ->get()
+            ->sortBy(fn ($row) => $row->student?->firstName)
+            ->values();
+
+        $sessions = TrainingSchedule::with(['instructor', 'topic'])
+            ->where('course_id', $id)
+            ->where('schedule_date', '>=', today())
+            ->orderBy('schedule_date')->orderBy('time_start')
+            ->take(20)
+            ->get();
+
+        $topicSessions = TrainingSchedule::where('course_id', $id)->whereNotNull('topic_id')
+            ->selectRaw('topic_id, COUNT(*) as total')->groupBy('topic_id')->pluck('total', 'topic_id');
+
+        return view('pages/course/course-details', compact('course', 'curriculum', 'materials', 'students', 'sessions', 'topicSessions'));
     }
 
     public function updateCourseDetails(Request $request)
@@ -100,30 +128,32 @@ class CourseController extends Controller
         $request->validate([
             'id' => 'required|exists:training_objectives,id',
             'files' => 'required|array|min:1',
-            'files.*' => 'required|file|mimes:pdf,doc,docx,ppt,pptx|max:10240',
+            'files.*' => 'required|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png|max:20480',
+            'description' => 'nullable|string|max:500',
         ], [
-            'files.required' => 'Please upload at least one file.',
-            'files.*.required' => 'Each file is required.',
-            'files.*.mimes' => 'Only PDF, DOC, DOCX, PPT, PPTX file types are allowed.',
-            'files.*.max' => 'The file size must not exceed 10 MB.',
-        ]);        
+            'files.required' => 'Please choose at least one file.',
+            'files.*.mimes' => 'Only PDF, Word, PowerPoint, Excel and image files are allowed.',
+            'files.*.max' => 'Each file must be 20 MB or smaller.',
+        ]);
 
-        $objectiveId = $request->input('id');
-        $uploadedFiles = $request->file('files'); // Retrieve the uploaded files
+        foreach ($request->file('files') as $file) {
+            // Stored name comes from the detected type, never the uploaded file name
+            $filePath = $file->store('course_materials', 'public');
 
-        foreach ($uploadedFiles as $file) {
-            // Store the file and get the path
-            $filePath = $file->store('course_materials', 'public'); // Save to storage/app/public/course_materials
-
-            // Save the file information in the database
             CourseMaterial::create([
-                'objective_id' => $objectiveId,
-                'file_name' => $file->getClientOriginalName(),
+                'objective_id' => $request->input('id'),
+                'file_name' => mb_substr($file->getClientOriginalName(), 0, 250),
                 'file_url' => $filePath,
+                'file_type' => strtolower((string) $file->extension()),
+                'file_size' => $this->formatSize($file->getSize()),
+                'description' => $request->input('description'),
+                'uploaded_by' => $request->user()->id,
             ]);
         }
 
-        return redirect()->back()->with('success', 'Course materials uploaded successfully!');
+        $count = count($request->file('files'));
+
+        return redirect()->back()->with('success', $count === 1 ? 'Material uploaded.' : "{$count} materials uploaded.");
     }
 
     public function downloadMaterial($id)
@@ -150,4 +180,8 @@ class CourseController extends Controller
         return redirect()->back()->with('success', 'Material deleted successfully.');
     }
 
+    private function formatSize(int $bytes): string
+    {
+        return $bytes >= 1048576 ? round($bytes / 1048576, 1) . ' MB' : max(1, round($bytes / 1024)) . ' KB';
+    }
 }

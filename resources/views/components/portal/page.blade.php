@@ -10,7 +10,7 @@
             @if ($subtitle)<p class="mt-2 text-ink-500">{{ $subtitle }}</p>@endif
         </div>
         @isset($actions)
-            <div class="flex flex-wrap items-center gap-2">{{ $actions }}</div>
+            <div class="page-actions flex shrink-0 flex-wrap items-center gap-2">{{ $actions }}</div>
         @endisset
     </div>
     {{ $slot }}

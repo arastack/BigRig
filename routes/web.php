@@ -390,6 +390,7 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
     */
     Route::prefix('training-schedule')->controller(TrainingScheduleController::class)->group(function () {
         Route::get('/', 'index')->name('schedule')->middleware('permission:read_training_schedule');
+        Route::get('/new', 'new')->name('schedule.new')->middleware('permission:create_training_schedule');
         Route::post('/create', 'create')->name('schedule.create')->middleware('permission:create_training_schedule');
         Route::delete('/{id}', 'destroy')->name('schedule.destroy')->middleware('permission:delete_training_schedule');
         Route::get('/{id}/edit', 'edit')->name('schedule.edit')->middleware('permission:update_training_schedule');

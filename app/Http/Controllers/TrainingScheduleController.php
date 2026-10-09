@@ -19,46 +19,70 @@ class TrainingScheduleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Retrieve training objectives, instructors, students, and batches
-        $objectives = TrainingObjective::orderBy('price', 'asc')->get();
+        $filters = $request->only(['when', 'course', 'batch', 'instructor']);
+        $when = $filters['when'] ?? 'upcoming';
 
-        $instructors = User::where('user_active', 1)
-            ->whereHas('roles', function ($query) {
-                $query->where('roles.id', '!=', 10);
-            })
-            ->orderBy('firstName', 'asc')
-            ->get();
+        $query = TrainingSchedule::with(['instructor', 'course', 'topic', 'batch'])
+            ->when($filters['course'] ?? null, fn ($q, $id) => $q->where('course_id', $id))
+            ->when($filters['batch'] ?? null, fn ($q, $id) => $q->where('batch_id', $id))
+            ->when($filters['instructor'] ?? null, fn ($q, $id) => $q->where('instructor_id', $id));
 
-        $students = User::where('user_active', 1)
-            ->whereHas('roles', function ($query) {
-                $query->where('roles.id', 10);
-            })
-            ->orderBy('firstName', 'asc')
-            ->get();
+        match ($when) {
+            'today' => $query->whereDate('schedule_date', today()),
+            'week' => $query->whereBetween('schedule_date', [today(), today()->addDays(6)]),
+            'past' => $query->whereDate('schedule_date', '<', today()),
+            'all' => null,
+            default => $query->whereDate('schedule_date', '>=', today()),
+        };
 
-        $batches = EnrolmentBatch::orderBy('id', 'asc')->get();
+        $sessions = $query
+            ->orderBy('schedule_date', $when === 'past' ? 'desc' : 'asc')
+            ->orderBy('time_start')
+            ->paginate(30)
+            ->withQueryString();
 
-        // Retrieve schedules with relationships
-        $schedules = TrainingSchedule::with(['instructor', 'course', 'topic'])
-            ->orderBy('schedule_date', 'asc')
-            ->paginate(10);
+        $attendanceTaken = StudentAttendance::whereIn('schedule_id', $sessions->pluck('id'))
+            ->distinct()->pluck('schedule_id')->flip();
 
-        // Attach student names to each schedule
-        $schedules->transform(function ($schedule) {
-            $studentIds = $schedule->studentIds();
+        return view('pages/schedule/index', [
+            'sessions' => $sessions,
+            'filters' => $filters,
+            'when' => $when,
+            'attendanceTaken' => $attendanceTaken,
+            'stats' => [
+                'today' => TrainingSchedule::whereDate('schedule_date', today())->count(),
+                'week' => TrainingSchedule::whereBetween('schedule_date', [today(), today()->addDays(6)])->count(),
+                'upcoming' => TrainingSchedule::whereDate('schedule_date', '>=', today())->count(),
+                'pendingChanges' => \App\Models\ScheduleChangeRequest::where('status', 'pending')->count(),
+            ],
+            'courses' => TrainingObjective::orderBy('objective')->get(),
+            'batches' => EnrolmentBatch::orderByDesc('id')->get(),
+            'instructors' => $this->instructorQuery()->get(),
+        ]);
+    }
 
-            // Fetch student names
-            $schedule->studentNames = User::whereIn('id', $studentIds)
-                ->get(['firstName', 'lastName'])
-                ->map(fn($s) => $s->firstName . ' ' . $s->lastName)
-                ->implode("\n"); // Convert array to newline-separated string
+    /**
+     * Form for scheduling one or more sessions for a course.
+     */
+    public function new(Request $request)
+    {
+        return view('pages/schedule/create', [
+            'courses' => TrainingObjective::orderBy('objective')->get(),
+            'batches' => EnrolmentBatch::orderByDesc('active_batch')->orderByDesc('id')->get(),
+            'preselect' => [
+                'course' => $request->integer('course') ?: null,
+                'batch' => EnrolmentBatch::where('active_batch', true)->value('id'),
+            ],
+        ]);
+    }
 
-            return $schedule;
-        });
-
-        return view('pages/schedule/index', compact('objectives', 'instructors', 'students', 'schedules', 'batches'));
+    private function instructorQuery()
+    {
+        return User::whereNull('suspended_at')
+            ->whereHas('roles', fn ($q) => $q->where('portal', \App\Models\Role::PORTAL_INSTRUCTOR))
+            ->orderBy('firstName');
     }
 
     public function getTopics($id)
@@ -77,10 +101,8 @@ class TrainingScheduleController extends Controller
             ->pluck('role_id');
 
         // Fetch users who have any of those roles
-        $instructors = User::whereHas('roles', function ($query) use ($roleIds) {
-                $query->whereIn('roles.id', $roleIds);
-            })
-            ->orderBy('firstName', 'asc')
+        $instructors = $this->instructorQuery()
+            ->whereHas('roles', fn ($query) => $query->whereIn('roles.id', $roleIds))
             ->get(['id', 'firstName', 'lastName']);
 
         // Return as JSON
@@ -93,6 +115,7 @@ class TrainingScheduleController extends Controller
         $studentIds = StudentInstructorDistribution::where('instructor_id', $instructor_id)
                         ->where('course_id', $course_id)
                         ->where('enrolment_batch_id', $batch_id)
+                        ->whereHas('student', fn ($q) => $q->whereNull('suspended_at'))
                         ->pluck('student_id');
 
         // Fetch students only if student IDs exist
@@ -104,100 +127,83 @@ class TrainingScheduleController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Create one session per time slot. Students are either all placed in every
+     * slot, or shared out evenly across the slots (e.g. practical driving groups).
      */
     public function create(Request $request)
     {
-        $request->validate([
-            'batch_id' => 'required|exists:enrolment_batches,id',
-            'course_id' => 'required|exists:training_objectives,id',
-            'instructor_id' => 'required|exists:users,id',
-            'topic_id' => 'required|exists:curriculum,id',
-            // 'time_start.*' => 'required|date_format:h:i A',
-            // 'time_stop.*' => 'required|date_format:h:i A|after:time_start.*',
+        $data = $request->validate([
+            'batch_id' => ['required', 'exists:enrolment_batches,id'],
+            'course_id' => ['required', 'exists:training_objectives,id'],
+            'instructor_id' => ['required', 'exists:users,id'],
+            'topic_id' => ['required', 'exists:curriculum,id'],
+            'session_type' => ['required', 'in:theory,practical'],
+            'allocation' => ['required', 'in:all,split'],
+            'students' => ['nullable', 'array'],
+            'students.*' => ['integer', 'exists:users,id'],
+            'slots' => ['required', 'array', 'min:1', 'max:30'],
+            'slots.*.date' => ['required', 'date', 'after_or_equal:today'],
+            'slots.*.start' => ['required', 'date_format:H:i'],
+            'slots.*.end' => ['required', 'date_format:H:i'],
+        ], [
+            'slots.*.date.after_or_equal' => 'Sessions cannot be scheduled in the past.',
+            'topic_id.required' => 'Choose a curriculum topic. Add topics on the course page first if there are none.',
         ]);
 
-        $batchID = $request->input('batch_id');
-        $courseID = $request->input('course_id');
-        $instructorID = $request->input('instructor_id');
-        $topicID = $request->input('topic_id');
-        $scheduleDate = $request->input('schedule_date');
-        $timeStart = $request->input('time_start');
-        $timeStop = $request->input('time_stop');
-        $studentNo = $request->input('distributed_students');
+        $instructor = User::findOrFail($data['instructor_id']);
 
+        foreach ($data['slots'] as $n => $slot) {
+            if ($slot['end'] <= $slot['start']) {
+                return back()->withInput()->withErrors(["slots.{$n}.end" => 'Slot ' . ($n + 1) . ': the end time must be after the start time.']);
+            }
 
-        // Validate each schedule for conflicts
-        for ($i = 0; $i < count($scheduleDate); $i++) {
-            $formattedDate = Carbon::createFromFormat('M d, Y', $scheduleDate[$i])->format('Y-m-d');
-            $formattedTimeStart = Carbon::createFromFormat('h:i A', $timeStart[$i])->format('H:i');
-            $formattedTimeStop = Carbon::createFromFormat('h:i A', $timeStop[$i])->format('H:i');
+            // Overlap with this instructor's other sessions (back-to-back sessions are fine)
+            $clash = TrainingSchedule::where('instructor_id', $instructor->id)
+                ->whereDate('schedule_date', $slot['date'])
+                ->where('time_start', '<', $slot['end'])
+                ->where('time_stop', '>', $slot['start'])
+                ->first();
 
-            // Check for existing schedule conflict
-            $existingSchedule = TrainingSchedule::where('instructor_id', $instructorID)
-            ->where('schedule_date', $formattedDate)
-            ->where(function ($query) use ($formattedTimeStart, $formattedTimeStop) {
-                $query->where(function ($q) use ($formattedTimeStart, $formattedTimeStop) {
-                    $q->whereBetween('time_start', [$formattedTimeStart, $formattedTimeStop])
-                    ->orWhereBetween('time_stop', [$formattedTimeStart, $formattedTimeStop]);
-                })
-                ->orWhere(function ($q) use ($formattedTimeStart, $formattedTimeStop) {
-                    $q->where('time_start', '<', $formattedTimeStart) // Use < instead of <=
-                    ->where('time_stop', '>', $formattedTimeStop); // Use > instead of >=
-                });
-            })
-            ->where('time_stop', '!=', $formattedTimeStart) // Exclude exact end-to-start matches
-            ->where('time_start', '!=', $formattedTimeStop) // Exclude exact start-to-end matches
-            ->first();
-
-
-            if ($existingSchedule) {
-                $instructor = User::where('id', $instructorID)->first(['firstName', 'lastName']);
-                $existingSchedule_formattedDate = Carbon::createFromFormat('Y-m-d', $existingSchedule->schedule_date)->format('M d, Y');
-                $existingSchedule_formattedTimeStart = Carbon::createFromFormat('H:i:s', $existingSchedule->time_start)->format('h:i A');
-                $existingSchedule_formattedTimeStop = Carbon::createFromFormat('H:i:s', $existingSchedule->time_stop)->format('h:i A');
-
-                if ($instructor) {
-                    return redirect()->back()->withErrors([
-                        'error' => "{$instructor->firstName} {$instructor->lastName} already has a schedule for {$existingSchedule_formattedDate} from {$existingSchedule_formattedTimeStart} to {$existingSchedule_formattedTimeStop}."
-                    ]);
-                }
+            if ($clash) {
+                return back()->withInput()->withErrors(["slots.{$n}.start" => sprintf(
+                    '%s %s already teaches on %s from %s to %s.',
+                    $instructor->firstName, $instructor->lastName,
+                    $clash->schedule_date->format('j M Y'),
+                    Carbon::parse($clash->time_start)->format('g:ia'),
+                    Carbon::parse($clash->time_stop)->format('g:ia')
+                )]);
             }
         }
 
-        $studentIds = StudentInstructorDistribution::where('instructor_id', $instructorID)
-                ->where('enrolment_batch_id', $batchID)
-                ->pluck('student_id')
-                ->toArray(); // Convert collection to an array
+        // Only students actually assigned to this instructor on this course and batch
+        $allowed = StudentInstructorDistribution::where('instructor_id', $instructor->id)
+            ->where('course_id', $data['course_id'])
+            ->where('enrolment_batch_id', $data['batch_id'])
+            ->pluck('student_id')->all();
+        $students = array_values(array_intersect(array_map('intval', $data['students'] ?? []), $allowed));
 
-        $students = $studentIds ? User::whereIn('id', $studentIds)->orderBy('id', 'asc')->pluck('id')->toArray() : [];
+        $slots = array_values($data['slots']);
+        $groups = $data['allocation'] === 'split' && count($slots) > 1
+            ? array_pad(array_chunk($students, (int) max(1, ceil(count($students) / count($slots)))), count($slots), [])
+            : array_fill(0, count($slots), $students);
 
-        $studentIndex = 0; // Track the index for student allocation
-
-        // Save the schedules if no conflicts are found
-        for ($i = 0; $i < count($scheduleDate); $i++) {
-            $formattedDate = Carbon::createFromFormat('M d, Y', $scheduleDate[$i])->format('Y-m-d');
-            $formattedTimeStart = Carbon::createFromFormat('h:i A', $timeStart[$i])->format('H:i:s');
-            $formattedTimeStop = Carbon::createFromFormat('h:i A', $timeStop[$i])->format('H:i:s');
-
-            // Extract the required number of students
-            $numStudents = $studentNo[$i]; // Number of students needed in this loop
-            $assignedStudents = array_slice($students, $studentIndex, $numStudents); // Slice students
-            $studentIndex += $numStudents; // Move the pointer forward
-
+        foreach ($slots as $i => $slot) {
             TrainingSchedule::create([
-                'batch_id' => $batchID,
-                'course_id' => $courseID,
-                'instructor_id' => $instructorID,
-                'topic_id' => $topicID,
-                'schedule_date' => $formattedDate,
-                'time_start' => $formattedTimeStart,
-                'time_stop' => $formattedTimeStop,
-                'students' => array_map('intval', (array) $assignedStudents), // cast to JSON by the model
+                'batch_id' => $data['batch_id'],
+                'course_id' => $data['course_id'],
+                'instructor_id' => $instructor->id,
+                'topic_id' => $data['topic_id'],
+                'session_type' => $data['session_type'],
+                'schedule_date' => $slot['date'],
+                'time_start' => $slot['start'],
+                'time_stop' => $slot['end'],
+                'students' => $groups[$i],
             ]);
         }
 
-        return redirect()->back()->with('success', 'Training schedule added successfully.');
+        $count = count($slots);
+
+        return redirect()->route('schedule')->with('success', $count === 1 ? 'Session scheduled.' : "{$count} sessions scheduled.");
     }
 
     /**
