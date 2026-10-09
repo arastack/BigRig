@@ -1,5 +1,6 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
+@import './brand.css';
 @import 'tailwindcss/utilities';
 
 /*
@@ -20,18 +21,10 @@
 @layer components {
     .container-site { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
 
-    .eyebrow { @apply inline-flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.2em] text-ink-500; }
-    .eyebrow::before { content: ''; @apply h-[3px] w-6 bg-brand-400; }
-    .on-dark .eyebrow { @apply text-ink-300; }
 
     .btn { @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md px-5 py-3 font-display text-base font-bold uppercase tracking-wider transition duration-150 disabled:cursor-not-allowed disabled:opacity-60; }
-    .btn-brand { @apply btn bg-brand-400 text-ink-950 shadow-[0_2px_0_0_theme(colors.ink.950)] hover:bg-brand-300 active:translate-y-px active:shadow-none; }
-    .btn-dark { @apply btn bg-ink-950 text-white hover:bg-ink-800; }
-    .btn-outline { @apply btn border-2 border-ink-950 text-ink-950 hover:bg-ink-950 hover:text-white; }
-    .btn-outline-light { @apply btn border-2 border-white/70 text-white hover:border-white hover:bg-white hover:text-ink-950; }
     .btn-sm { @apply px-4 py-2 text-sm; }
 
-    .link-underline { @apply font-semibold text-ink-950 underline decoration-brand-400 decoration-[3px] underline-offset-4 hover:decoration-ink-950; }
 
     .card { @apply rounded-lg border border-ink-100 bg-white; }
 
@@ -39,15 +32,8 @@
     .section-title { @apply mt-3 text-4xl sm:text-5xl lg:text-6xl; }
     .lead { @apply text-lg leading-relaxed text-ink-500; }
 
-    /* Lane markings: a dashed yellow road line */
-    .lane { background-image: linear-gradient(90deg, theme(colors.brand.400) 0 60%, transparent 60% 100%); background-size: 48px 4px; background-repeat: repeat-x; @apply h-1; }
-    .lane-v { background-image: linear-gradient(180deg, theme(colors.brand.400) 0 60%, transparent 60% 100%); background-size: 4px 32px; background-repeat: repeat-y; @apply w-1; }
 
-    /* Hazard stripes */
-    .hazard { background-image: repeating-linear-gradient(-45deg, theme(colors.brand.400) 0 14px, theme(colors.ink.950) 14px 28px); }
 
-    .form-label { @apply mb-1.5 block text-sm font-semibold text-ink-800; }
-    .form-field { @apply block w-full rounded-md border-ink-200 bg-white px-3.5 py-2.5 text-ink-900 shadow-sm placeholder:text-ink-300 focus:border-ink-950 focus:ring-2 focus:ring-brand-400; }
 
     .prose-site { @apply prose prose-lg max-w-none prose-headings:font-display prose-headings:uppercase prose-headings:text-ink-950 prose-a:text-ink-950 prose-a:decoration-brand-400 prose-a:decoration-2 prose-strong:text-ink-900 prose-li:marker:text-brand-600; }
 }

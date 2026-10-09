@@ -42,6 +42,25 @@ class Announcement extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * Active, published announcements addressed to a student's batch and paid courses.
+     */
+    public function scopeVisibleTo($query, User $student)
+    {
+        $courseIds = Subscription::where('user_id', $student->id)
+            ->where('payment_status', 'completed')
+            ->get()
+            ->flatMap(fn ($subscription) => $subscription->objectiveIds())
+            ->unique()
+            ->all();
+
+        return $query->where('is_active', true)
+            ->where(fn ($q) => $q->whereNull('batch_id')->orWhere('batch_id', $student->enrolment_batch_id))
+            ->where(fn ($q) => $q->whereNull('course_id')->orWhereIn('course_id', $courseIds))
+            ->where(fn ($q) => $q->whereNull('publish_date')->orWhere('publish_date', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('expiry_date')->orWhere('expiry_date', '>=', now()));
+    }
+
     public function reads()
     {
         return $this->hasMany(AnnouncementRead::class);

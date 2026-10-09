@@ -4,6 +4,8 @@
 /* Additional styles */
 @import 'additional-styles/utility-patterns.css';
 @import 'additional-styles/flatpickr.css';
+@import './brand.css';
+@import './portal.css';
 
 @import 'tailwindcss/utilities';
 

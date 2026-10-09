@@ -13,7 +13,7 @@ class StudentAnnouncementController extends Controller
     {
         $user = Auth::user();
 
-        $announcements = $this->visibleTo($user)
+        $announcements = Announcement::visibleTo($user)
             ->with(['course', 'batch', 'creator'])
             ->orderBy('priority', 'desc')
             ->orderBy('created_at', 'desc')
@@ -33,7 +33,7 @@ class StudentAnnouncementController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-        $announcement = $this->visibleTo($user)->findOrFail($id);
+        $announcement = Announcement::visibleTo($user)->findOrFail($id);
 
         // Mark as read
         if (!$announcement->isReadBy($user->id)) {
@@ -41,24 +41,5 @@ class StudentAnnouncementController extends Controller
         }
 
         return view('student.announcement-detail', compact('announcement'));
-    }
-
-    /**
-     * Active, published announcements addressed to this student's batch and courses.
-     */
-    private function visibleTo($user)
-    {
-        $enrolledCourseIds = Subscription::where('user_id', $user->id)
-            ->where('payment_status', 'completed')
-            ->get()
-            ->flatMap(fn ($subscription) => $subscription->objectiveIds())
-            ->unique()
-            ->all();
-
-        return Announcement::where('is_active', true)
-            ->where(fn ($q) => $q->whereNull('batch_id')->orWhere('batch_id', $user->enrolment_batch_id))
-            ->where(fn ($q) => $q->whereNull('course_id')->orWhereIn('course_id', $enrolledCourseIds))
-            ->where(fn ($q) => $q->whereNull('publish_date')->orWhere('publish_date', '<=', now()))
-            ->where(fn ($q) => $q->whereNull('expiry_date')->orWhere('expiry_date', '>=', now()));
     }
 }

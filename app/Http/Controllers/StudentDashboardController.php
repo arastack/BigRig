@@ -53,11 +53,15 @@ class StudentDashboardController extends Controller
             $upcomingSchedule = TrainingSchedule::whereIn('instructor_id', $instructorIds)
                 ->whereIn('course_id', $courseIds)
                 ->where('batch_id', $user->enrolment_batch_id)
-                ->whereBetween('schedule_date', [Carbon::now(), Carbon::now()->addDays(7)])
+                ->whereBetween('schedule_date', [Carbon::today(), Carbon::today()->addDays(14)])
                 ->orderBy('schedule_date', 'asc')
+                ->orderBy('time_start', 'asc')
                 ->with(['topic', 'course', 'instructor'])
-                ->take(10) // Show more since there might be multiple courses
-                ->get();
+                ->get()
+                // Only sessions this student is booked on
+                ->filter(fn ($session) => $session->studentIds() === [] || $session->hasStudent($user->id))
+                ->take(6)
+                ->values();
         }
 
         // Get course materials for all enrolled courses
@@ -104,24 +108,8 @@ class StudentDashboardController extends Controller
             ? round((($attendanceStats->present + $attendanceStats->late) / $attendanceStats->total) * 100)
             : 0;
 
-        // Get unread announcements
-        $announcements = Announcement::where('is_active', true)
-            ->where(function($query) use ($user) {
-                $query->whereNull('batch_id')
-                    ->orWhere('batch_id', $user->enrolment_batch_id);
-            })
-            ->where(function($query) use ($enrolledCourses) {
-                $query->whereNull('course_id')
-                    ->orWhereIn('course_id', $enrolledCourses->pluck('id'));
-            })
-            ->where(function($query) {
-                $query->whereNull('publish_date')
-                    ->orWhere('publish_date', '<=', now());
-            })
-            ->where(function($query) {
-                $query->whereNull('expiry_date')
-                    ->orWhere('expiry_date', '>=', now());
-            })
+        // Latest announcements addressed to this student
+        $announcements = Announcement::visibleTo($user)
             ->orderBy('priority', 'desc')
             ->orderBy('created_at', 'desc')
             ->take(5)
@@ -135,7 +123,10 @@ class StudentDashboardController extends Controller
 
         $unreadCount = $announcements->where('is_read', false)->count();
 
+        $progress = \App\Support\ApplicationProgress::for($user);
+
         return view('student.dashboard', compact(
+            'progress',
             'subscription',
             'enrolledCourses',
             'instructorAssignments',

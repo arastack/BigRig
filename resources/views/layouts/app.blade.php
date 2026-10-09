@@ -1,270 +1,173 @@
+@php
+    $user = Auth::user();
+    $navigation = \App\Support\PortalNavigation::for($user);
+    $portalName = ['admin' => 'Administration', 'instructor' => 'Instructor portal', 'student' => 'Student portal'][$user->portal()] ?? 'Portal';
+    $roleName = $user->roles->first()?->role_name;
+    $pageTitle = trim($__env->yieldContent('title')) ?: ($attributes['title'] ?? $portalName);
+
+    $isActive = function (array $item) {
+        $patterns = $item['active'] ?? [$item['route']];
+        if (! request()->routeIs(...$patterns)) {
+            return false;
+        }
+        // Items sharing a route (e.g. Applicants / Students) are told apart by query string
+        foreach ($item['query'] ?? [] as $key => $value) {
+            if (request($key, 'awaiting_payment') !== $value) {
+                return false;
+            }
+        }
+
+        return true;
+    };
+@endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+<html lang="en-NG">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="robots" content="noindex">
+    <title>{{ $pageTitle }} | {{ $settings->site_name ?? config('app.name') }}</title>
+    @if ($settings?->favicon)<link rel="icon" href="{{ Storage::url($settings->favicon) }}">@endif
 
-        <!-- <title>{{ config('app.name', 'Laravel') }}</title> -->
-        <title>@yield('title')</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    <style>.ck-editor__editable { min-height: 10rem; } .ck.ck-editor { color: #1A1A17; }</style>
 
-        <!-- Meta Description -->
-        <meta name="description" content="{{ $settings->site_description }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
+    @stack('head')
+</head>
+<body class="bg-ink-50 font-inter text-ink-700 antialiased" x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
+    <a href="#portal-main" class="sr-only z-[100] rounded bg-brand-400 px-4 py-2 font-semibold text-ink-950 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
 
-        <!-- Meta Keywords -->
-        <meta name="keywords" content="{{ $settings->site_keywords }}">
+    {{-- Mobile backdrop --}}
+    <div class="fixed inset-0 z-40 bg-ink-950/60 lg:hidden" x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen = false" x-cloak></div>
 
-        <!-- Author -->
-        <meta name="author" content="{{ $settings->site_author }}">
-
-        <!-- Open Graph Tags -->
-        <meta property="og:title" content="@yield('title') | {{ $settings->site_name }}">
-        <meta property="og:description" content="{{ $settings->site_description }}">
-        <meta property="og:image" content="{{ Storage::url($settings->light_theme_logo) }}">
-        <meta property="og:url" content="{{ url()->current() }}">
-        <meta property="og:type" content="website">
-
-        <!-- Twitter Card Tags -->
-        <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="@yield('title') | {{ $settings->site_name }}">
-        <meta name="twitter:description" content="{{ $settings->site_description }}">
-        <meta name="twitter:image" content="{{ $settings->site_logo }}">
-
-        <!-- Fav Icon -->
-        <link rel="icon" href="{{ Storage::url($settings->favicon) }}" type="image/x-icon">
-
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet" />
-
-        <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
-
-
-        <style>
-            .cke_notifications_area {
-                display: none !important;
-            }
-        </style>
-        
-
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-        <!-- Styles -->
-        @livewireStyles    
-
-        <script>
-            if (localStorage.getItem('dark-mode') === 'false' || !('dark-mode' in localStorage)) {
-                document.querySelector('html').classList.remove('dark');
-                document.querySelector('html').style.colorScheme = 'light';
-            } else {
-                document.querySelector('html').classList.add('dark');
-                document.querySelector('html').style.colorScheme = 'dark';
-            }
-        </script>
-    </head>
-    <body
-        class="font-inter antialiased bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400 overflow-y-hidden"
-        :class="{ 'sidebar-expanded': sidebarExpanded }"
-        x-data="{ sidebarOpen: false, sidebarExpanded: localStorage.getItem('sidebar-expanded') == 'true' }"
-        x-init="$watch('sidebarExpanded', value => localStorage.setItem('sidebar-expanded', value))"    
-    >
-
-        @if (session('success'))
-            <div x-show="open" 
-                x-data="{ open: true, autoClose() { setTimeout(() => { this.open = false }, 5000); } }" 
-                x-init="autoClose()" 
-                role="alert"
-                x-transition:leave="transition-opacity duration-500 opacity-0"
-                x-transition:enter="transition-opacity duration-500 opacity-100">
-
-                <!-- Notification for Light Theme (bottom left) -->
-                <div class="fixed bottom-4 left-4 z-50 inline-flex min-w-80 px-4 py-2 rounded-lg text-sm bg-white shadow-sm border border-gray-200 text-gray-600 dark:hidden">
-                    <div class="flex w-full justify-between items-start">
-                        <div class="flex">
-                            <svg class="shrink-0 fill-current text-green-500 mt-[3px] mr-3" width="16" height="16" viewBox="0 0 16 16">
-                                <path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zM7 11.4L3.6 8 5 6.6l2 2 4-4L12.4 6 7 11.4z" />
-                            </svg>
-                            <div>{{ session('success') }}</div>
-                        </div>
-                        <button class="opacity-60 hover:opacity-70 ml-3 mt-[3px]" @click="open = false">
-                            <div class="sr-only">Close</div>
-                            <svg class="fill-current" width="16" height="16" viewBox="0 0 16 16">
-                                <path d="M7.95 6.536l4.242-4.243a1 1 0 111.415 1.414L9.364 7.95l4.243 4.242a1 1 0 11-1.415 1.415L7.95 9.364l-4.243 4.243a1 1 0 01-1.414-1.415L6.536 7.95 2.293 3.707a1 1 0 011.414-1.414L7.95 6.536z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Notification for Dark Theme (bottom left) -->
-                <div class="fixed bottom-4 left-4 z-50 inline-flex min-w-80 px-4 py-2 rounded-lg text-sm bg-green-100 text-gray-700 dark:block">
-                    <div class="flex w-full justify-between items-start">
-                        <div class="flex">
-                            <svg class="shrink-0 fill-current text-green-500 mt-[3px] mr-3" width="16" height="16" viewBox="0 0 16 16">
-                                <path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zM7 11.4L3.6 8 5 6.6l2 2 4-4L12.4 6 7 11.4z" />
-                            </svg>
-                            <div>{{ session('success') }}</div>
-                        </div>
-                        <button class="opacity-60 hover:opacity-70 ml-3 mt-[3px]" @click="open = false">
-                            <div class="sr-only">Close</div>
-                            <svg class="fill-current" width="16" height="16" viewBox="0 0 16 16">
-                                <path d="M7.95 6.536l4.242-4.243a1 1 0 111.415 1.414L9.364 7.95l4.243 4.242a1 1 0 11-1.415 1.415L7.95 9.364l-4.243 4.243a1 1 0 01-1.414-1.415L6.536 7.95 2.293 3.707a1 1 0 011.414-1.414L7.95 6.536z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        @if ($errors->any())
-            <div x-data="{ open: true }" x-show="open" role="alert" class="fixed bottom-4 left-4 z-50 min-w-80 px-4 py-2 rounded-lg text-sm bg-red-100 text-gray-700 shadow-lg">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="font-semibold">Please fix the following errors:</p>
-                        <ul class="mt-2">
-                            @foreach ($errors->all() as $error)
-                                <li class="text-sm">{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                    <button @click="open = false" class="text-red-500 hover:text-red-700 focus:outline-none">
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div x-data="{ open: true }" x-show="open" role="alert" class="fixed bottom-4 left-4 z-50 min-w-80 px-4 py-2 rounded-lg text-sm bg-red-100 text-gray-700 shadow-lg">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p>{{ session('error') }}</p>
-                    </div>
-                    <button @click="open = false" class="text-red-500 hover:text-red-700 focus:outline-none">
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        @endif
-
-        <div>
-            <div class="m-1.5" x-data="{
-                openModal: @if(!Auth::user()->hasVerifiedEmail()) true @else false @endif
-            }" x-init="if (openModal) $store.deleteModal.modalOpen = true">
-            
-                <!-- Modal backdrop -->
-                <div
-                    class="fixed inset-0 bg-gray-900 bg-opacity-30 z-50 transition-opacity"
-                    x-show="$store.deleteModal.modalOpen"
-                    x-transition:enter="transition ease-out duration-200"
-                    x-transition:enter-start="opacity-0"
-                    x-transition:enter-end="opacity-100"
-                    x-transition:leave="transition ease-out duration-100"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    aria-hidden="true"
-                    x-cloak
-                ></div>
-            
-                <!-- Modal dialog -->
-                <div id="delete-modal"
-                    class="fixed inset-0 z-50 overflow-hidden flex items-center my-4 justify-center px-4 sm:px-6"
-                    role="dialog"
-                    aria-modal="true"
-                    x-show="$store.deleteModal.modalOpen"
-                    x-transition:enter="transition ease-in-out duration-200"
-                    x-transition:enter-start="opacity-0 translate-y-4"
-                    x-transition:enter-end="opacity-100 translate-y-0"
-                    x-transition:leave="transition ease-in-out duration-200"
-                    x-transition:leave-start="opacity-100 translate-y-0"
-                    x-transition:leave-end="opacity-0 translate-y-4"
-                    x-cloak
-                    >
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-auto max-w-lg w-full max-h-full"
-                        @click.stop> <!-- Prevent clicks inside the modal from closing it -->
-                        <div class="p-5 flex space-x-4">
-                            <!-- Modal content -->
-                            <div>
-                                <div class="mb-2">
-                                    <div class="text-lg font-semibold text-gray-800 dark:text-gray-100">Email Verification Required</div>
-                                </div>
-                                <div class="text-sm mb-10">
-                                    <p>Your email is not verified. Please verify your email first.</p>
-                                </div>
-                                <div class="flex flex-wrap justify-end space-x-2">
-                                    {{-- <button class="btn-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-gray-300"
-                                            @click="$store.deleteModal.close()">
-                                        Close
-                                    </button> --}}
-                                    <a href="{{ route('verification.notice') }}" class="btn-sm bg-blue-500 hover:bg-blue-600 text-white">
-                                        Verify Now
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>            
-        </div>    
-
-        <script>
-            if (localStorage.getItem('sidebar-expanded') == 'true') {
-                document.querySelector('body').classList.add('sidebar-expanded');
-            } else {
-                document.querySelector('body').classList.remove('sidebar-expanded');
-            }
-        </script>
-
-        <!-- Page wrapper -->
-        <div class="flex h-[100dvh] overflow-hidden">
-
-            <x-app.sidebar :variant="$attributes['sidebarVariant']" />
-
-            <!-- Content area -->
-            <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden @if($attributes['background']){{ $attributes['background'] }}@endif" x-ref="contentarea">
-
-                <x-app.header :variant="$attributes['headerVariant']" />
-
-                <main class="grow">
-                    {{ $slot }}
-                </main>
-
-            </div>
-
+    {{-- Sidebar --}}
+    <aside id="portal-sidebar" class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col bg-ink-950 transition-transform duration-200 lg:translate-x-0"
+           :class="sidebarOpen && 'translate-x-0'" aria-label="Main navigation">
+        <div class="flex h-20 shrink-0 items-center justify-between px-5">
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
+                <img src="{{ brand_logo('dark', 200) }}" alt="{{ $settings->site_name ?? 'BigRig' }}" class="h-12 w-auto">
+                <span class="font-display text-sm font-semibold uppercase leading-tight tracking-widest text-ink-300">{{ $portalName }}</span>
+            </a>
+            <button type="button" class="rounded-md p-2 text-ink-300 hover:bg-white/10 lg:hidden" @click="sidebarOpen = false" aria-label="Close menu"><x-site.icon name="x" class="h-5 w-5" /></button>
         </div>
-        @livewireScriptConfig
-        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-    </body>
+        <div class="lane mx-5 opacity-60" aria-hidden="true"></div>
 
+        <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-6">
+            @foreach ($navigation as $section)
+                <div>
+                    @if ($section['title'])
+                        <p class="mb-2 px-3 font-display text-xs font-semibold uppercase tracking-[0.2em] text-ink-400">{{ $section['title'] }}</p>
+                    @endif
+                    <ul class="space-y-0.5">
+                        @foreach ($section['items'] as $item)
+                            @php $active = $isActive($item); @endphp
+                            <li>
+                                <a href="{{ route($item['route'], $item['params'] ?? []) }}" @class(['nav-link', 'nav-link-active' => $active]) @if ($active) aria-current="page" @endif>
+                                    <x-site.icon :name="$item['icon']" class="h-[18px] w-[18px] shrink-0" />
+                                    <span class="flex-1">{{ $item['label'] }}</span>
+                                    @if (! empty($item['badge']))
+                                        <span @class(['rounded-full px-2 py-0.5 text-xs font-bold', 'bg-ink-950 text-brand-400' => $active, 'bg-brand-400 text-ink-950' => ! $active])>{{ $item['badge'] }}</span>
+                                    @endif
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endforeach
+        </nav>
+
+        <div class="border-t border-white/10 p-3">
+            <a href="{{ route('index') }}" class="nav-link" target="_blank"><x-site.icon name="external" class="h-[18px] w-[18px]" /> View website</a>
+        </div>
+    </aside>
+
+    <div class="lg:pl-72">
+        {{-- Top bar --}}
+        <header class="sticky top-0 z-30 border-b border-ink-100 bg-white/90 backdrop-blur">
+            <div class="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+                <div class="flex min-w-0 items-center gap-3">
+                    <button type="button" class="-ml-2 rounded-md p-2 text-ink-600 hover:bg-ink-50 lg:hidden" @click="sidebarOpen = true" aria-controls="portal-sidebar" :aria-expanded="sidebarOpen.toString()" aria-label="Open menu">
+                        <x-site.icon name="menu" class="h-6 w-6" />
+                    </button>
+                    <p class="truncate font-display text-lg font-semibold uppercase tracking-wide text-ink-950">{{ $pageTitle }}</p>
+                </div>
+
+                <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                    <button type="button" class="flex items-center gap-3 rounded-lg p-1.5 pr-2 hover:bg-ink-50" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="menu">
+                        <x-portal.avatar :user="$user" size="h-9 w-9" class="ring-2 ring-brand-400" />
+                        <span class="hidden text-left sm:block">
+                            <span class="block text-sm font-semibold leading-tight text-ink-950">{{ $user->firstName }} {{ $user->lastName }}</span>
+                            <span class="block text-xs text-ink-500">{{ $roleName }}</span>
+                        </span>
+                        <x-site.icon name="chevron-down" class="hidden h-4 w-4 text-ink-400 sm:block" />
+                    </button>
+                    <div x-show="open" x-cloak x-transition.origin.top.right class="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-ink-100 bg-white py-1 shadow-lg" role="menu">
+                        <div class="border-b border-ink-100 px-4 py-3">
+                            <p class="truncate text-sm font-semibold text-ink-950">{{ $user->full_name }}</p>
+                            <p class="truncate text-xs text-ink-500">{{ $user->email }}</p>
+                        </div>
+                        <a href="{{ route('profile.show') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-ink-700 hover:bg-ink-50" role="menuitem"><x-site.icon name="user" class="h-4 w-4" /> Profile &amp; security</a>
+                        @if ($user->isStudent())
+                            <a href="{{ route('application') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-ink-700 hover:bg-ink-50" role="menuitem"><x-site.icon name="file-text" class="h-4 w-4" /> My application</a>
+                        @endif
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50" role="menuitem"><x-site.icon name="log-out" class="h-4 w-4" /> Sign out</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        {{-- Flash messages --}}
+        <div class="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0" aria-live="polite">
+            @foreach (['success' => ['check-circle', 'border-green-200 bg-white text-green-900', 'text-green-600'], 'info' => ['check-circle', 'border-ink-200 bg-white text-ink-900', 'text-ink-600'], 'warning' => ['alert', 'border-brand-500 bg-brand-50 text-ink-900', 'text-brand-700'], 'error' => ['alert', 'border-red-200 bg-white text-red-900', 'text-red-600']] as $key => [$icon, $style, $iconStyle])
+                @if (session($key))
+                    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, {{ $key === 'error' ? 9000 : 6000 }})" x-transition
+                         class="pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 text-sm shadow-lg {{ $style }}" role="{{ $key === 'error' ? 'alert' : 'status' }}">
+                        <x-site.icon :name="$icon" class="mt-0.5 h-5 w-5 shrink-0 {{ $iconStyle }}" />
+                        <p class="flex-1">{{ session($key) }}</p>
+                        <button type="button" @click="show = false" class="opacity-50 hover:opacity-100" aria-label="Dismiss"><x-site.icon name="x" class="h-4 w-4" /></button>
+                    </div>
+                @endif
+            @endforeach
+            @if ($errors->any())
+                <div x-data="{ show: true }" x-show="show" class="pointer-events-auto rounded-xl border border-red-200 bg-white px-4 py-3 text-sm text-red-900 shadow-lg" role="alert">
+                    <div class="flex items-start justify-between gap-3">
+                        <p class="font-semibold">Please fix the following:</p>
+                        <button type="button" @click="show = false" class="opacity-50 hover:opacity-100" aria-label="Dismiss"><x-site.icon name="x" class="h-4 w-4" /></button>
+                    </div>
+                    <ul class="mt-1 list-inside list-disc">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+                </div>
+            @endif
+        </div>
+
+        <main id="portal-main" class="min-h-[calc(100vh-4rem)]">
+            {{ $slot }}
+        </main>
+    </div>
+
+    @livewireScriptConfig
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
-    
-    <script>
-        CKEDITOR.replace( 'editor' );
-        CKEDITOR.replace( 'editor1' );
-    </script> 
-
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.store('deleteModal', {
-                modalOpen: false,
-                sliderId: null, // Track the ID of the objective to delete
-                open(id) {
-                    this.sliderId = id;
-                    this.modalOpen = true;
-                },
-                close() {
-                    this.modalOpen = false;
-                    this.sliderId = null;
-                }
-            });
+            if (!Alpine.store('deleteModal')) {
+                Alpine.store('deleteModal', {
+                    modalOpen: false,
+                    sliderId: null,
+                    open(id) { this.sliderId = id; this.modalOpen = true },
+                    close() { this.modalOpen = false; this.sliderId = null },
+                });
+            }
         });
     </script>
+    @stack('scripts')
+</body>
 </html>

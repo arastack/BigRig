@@ -123,27 +123,57 @@ class StudentProgressController extends Controller
 
     public function course($courseId)
     {
-        // Detailed progress for a specific course
         $user = Auth::user();
 
-        // Verify student is enrolled
-        $subscription = Subscription::where('user_id', $user->id)
+        $enrolledCourseIds = Subscription::where('user_id', $user->id)
             ->where('payment_status', 'completed')
-            ->latest()
+            ->get()
+            ->flatMap(fn ($subscription) => $subscription->objectiveIds())
+            ->all();
+
+        abort_unless(in_array((int) $courseId, $enrolledCourseIds, true), 403);
+
+        $course = \App\Models\TrainingObjective::with('curriculum')->findOrFail($courseId);
+
+        $assignment = StudentInstructorDistribution::with('instructor')
+            ->where('student_id', $user->id)
+            ->where('course_id', $course->id)
             ->first();
 
-        if (!$subscription) {
-            abort(404);
-        }
+        $sessions = TrainingSchedule::with(['topic', 'instructor'])
+            ->where('course_id', $course->id)
+            ->where('batch_id', $user->enrolment_batch_id)
+            ->orderBy('schedule_date')
+            ->orderBy('time_start')
+            ->get()
+            ->filter(fn ($session) => $session->studentIds() === [] || $session->hasStudent($user->id))
+            ->values();
 
-        $enrolledCourseIds = $subscription->objectives->pluck('id')->toArray();
-        if (!in_array($courseId, $enrolledCourseIds)) {
-            abort(403);
-        }
+        $attendance = StudentAttendance::where('student_id', $user->id)
+            ->whereIn('schedule_id', $sessions->pluck('id'))
+            ->get()
+            ->keyBy('schedule_id');
 
-        // Get detailed progress data
-        // ... implementation for detailed course progress
+        $isPast = fn ($session) => Carbon::parse($session->schedule_date->format('Y-m-d') . ' ' . $session->time_stop)->isPast();
+        $coveredTopicIds = $sessions->filter($isPast)->pluck('topic_id')->filter()->unique();
 
-        return view('student.course-progress', compact('courseId'));
+        $attended = $attendance->whereIn('status', ['present', 'late'])->count();
+
+        return view('student.course-progress', [
+            'course' => $course,
+            'instructor' => $assignment?->instructor,
+            'sessions' => $sessions,
+            'attendance' => $attendance,
+            'isPast' => $isPast,
+            'coveredTopicIds' => $coveredTopicIds,
+            'stats' => [
+                'completed' => $sessions->filter($isPast)->count(),
+                'total' => $sessions->count(),
+                'attended' => $attended,
+                'recorded' => $attendance->count(),
+                'topics_covered' => $course->curriculum->whereIn('id', $coveredTopicIds)->count(),
+                'topics_total' => $course->curriculum->count(),
+            ],
+        ]);
     }
 }

@@ -1,0 +1,34 @@
+/*
+ * Portal (admin, instructor, student) components built on the brand tokens.
+ */
+@layer base {
+    [x-cloak] { display: none !important; }
+    /* Older portal screens: give their page headings the brand display type */
+    #portal-main h1 { @apply font-display uppercase tracking-tight text-ink-950; }
+    .font-display { letter-spacing: 0.01em; }
+}
+
+@layer components {
+    .portal-card { @apply rounded-xl border border-ink-100 bg-white shadow-sm; }
+    .portal-card-header { @apply flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-5 py-4; }
+    .portal-card-title { @apply font-display text-xl font-bold uppercase tracking-wide text-ink-950; }
+
+    .portal-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500; }
+    .portal-input { @apply block w-full rounded-lg border-ink-200 bg-white text-sm text-ink-900 shadow-sm placeholder:text-ink-300 focus:border-ink-950 focus:ring-2 focus:ring-brand-400; }
+
+    .portal-table { @apply w-full text-left text-sm; }
+    .portal-table thead th { @apply whitespace-nowrap border-b border-ink-100 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-ink-500; }
+    .portal-table tbody td { @apply border-b border-ink-100 px-4 py-3 align-middle text-ink-700; }
+    .portal-table tbody tr:last-child td { @apply border-b-0; }
+    .portal-table tbody tr:hover td { @apply bg-ink-50/60; }
+
+    .badge { @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+    .badge-yellow { @apply badge bg-brand-100 text-brand-800; }
+    .badge-green { @apply badge bg-green-100 text-green-800; }
+    .badge-red { @apply badge bg-red-100 text-red-800; }
+    .badge-grey { @apply badge bg-ink-100 text-ink-700; }
+    .badge-dark { @apply badge bg-ink-950 text-brand-400; }
+
+    .nav-link { @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink-300 transition hover:bg-white/5 hover:text-white; }
+    .nav-link-active { @apply bg-brand-400 text-ink-950 hover:bg-brand-400 hover:text-ink-950; }
+}

@@ -34,15 +34,14 @@ class MaterialController extends Controller
             ->paginate(20);
 
         // Get materials statistics
+        $ownMaterials = CourseMaterial::whereIn('objective_id', $assignedCourseIds);
         $stats = [
-            'total_materials' => CourseMaterial::count(),
+            'total_materials' => (clone $ownMaterials)->count(),
             'total_size' => $this->formatFileSize(
-                CourseMaterial::sum(\DB::raw("CAST(REPLACE(REPLACE(file_size, 'MB', ''), 'KB', '') AS DECIMAL(10,2))"))
+                (clone $ownMaterials)->sum(\DB::raw("CAST(REPLACE(REPLACE(file_size, 'MB', ''), 'KB', '') AS DECIMAL(10,2))"))
             ),
-            'courses_with_materials' => CourseMaterial::distinct('objective_id')
-                ->count('objective_id'),
-            'recent_uploads' => CourseMaterial::where('created_at', '>=', now()->subDays(7))
-                ->count(),
+            'courses_with_materials' => (clone $ownMaterials)->distinct('objective_id')->count('objective_id'),
+            'recent_uploads' => (clone $ownMaterials)->where('created_at', '>=', now()->subDays(7))->count(),
         ];
 
         return view('instructor.materials.index', compact('courses', 'materials', 'stats'));

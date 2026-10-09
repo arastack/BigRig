@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
 use App\Models\Settings;
 use App\Models\TrainingObjective;
 use App\Models\Faqs;
@@ -15,7 +14,6 @@ use App\Models\Services;
 use App\Models\Clients;
 use App\Models\AboutCompany;
 use App\Models\Achievements;
-use App\Models\EnrolmentBatch;
 
 class SettingsController extends Controller
 {
@@ -64,7 +62,7 @@ class SettingsController extends Controller
             'show_whatsapp_support' => 'sometimes|boolean',
             'show_telegram_support' => 'sometimes|boolean',
             'show_preloader' => 'sometimes|boolean',
-            'preferred_landing_page' => 'required|integer|in:1,2'
+            'preferred_landing_page' => 'sometimes|integer|in:1,2'
         ]);
 
         $settings = Settings::first(); // Assuming only one settings record exists
@@ -123,9 +121,15 @@ class SettingsController extends Controller
         $settings->tiktok_handle = $request->input('tiktok_handle');
         $settings->linkedin_handle = $request->input('linkedin_handle');
         $settings->show_whatsapp_support = $request->input('show_whatsapp_support');
-        $settings->show_telegram_support = $request->input('show_telegram_support');
-        $settings->show_preloader = $request->input('show_preloader');
-        $settings->preferred_landing_page = $request->input('preferred_landing_page');
+        if ($request->has('show_telegram_support')) {
+            $settings->show_telegram_support = $request->input('show_telegram_support');
+        }
+        if ($request->has('show_preloader')) {
+            $settings->show_preloader = $request->input('show_preloader');
+        }
+        if ($request->has('preferred_landing_page')) {
+            $settings->preferred_landing_page = $request->input('preferred_landing_page');
+        }
         // Update other fields as needed
 
         $settings->save();
@@ -693,7 +697,20 @@ class SettingsController extends Controller
         if ($filePath && Storage::disk('public')->exists($filePath)) {
             Storage::disk('public')->delete($filePath);
         }
-        return redirect()->back()->with('success', 'Service deleted successfully.');
+        return redirect()->back()->with('success', 'Partner removed.');
+    }
+
+    public function achievementsDestroy($id)
+    {
+        $achievement = Achievements::findOrFail($id);
+        $picture = $achievement->picture;
+        $achievement->delete();
+
+        if ($picture && Storage::disk('public')->exists($picture)) {
+            Storage::disk('public')->delete($picture);
+        }
+
+        return redirect()->back()->with('success', 'Achievement deleted.');
     }
 
     public function achievementsIndex()
@@ -761,50 +778,5 @@ class SettingsController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Achievement updated successfully!');
-    }
-
-    public function enrolmentBatchIndex()
-    {
-        $batches = EnrolmentBatch::orderBy('id', 'asc')->simplePaginate(8);
-
-        return view('pages/settings/enrolment-batch', compact('batches'));
-    }
-
-    public function enrolmentBatchStore(Request $request)
-    {
-        $request->validate([
-            'batch_name' => 'required|string|max:255',
-            'commencement_date' => 'required|date',
-        ]);
-
-        $formattedDate = Carbon::createFromFormat('M d, Y', $request->input('commencement_date'))->format('Y-m-d');
-
-        EnrolmentBatch::create([
-            'batch_name' => $request->input('batch_name'),
-            'c_date' => $formattedDate,
-        ]);
-
-
-        return redirect()->back()->with('success', 'Enrolment batch created successfully.');
-    }
-
-    public function enrolmentBatchDestroy($id)
-    {
-        $enrolment_batch = EnrolmentBatch::findOrFail($id);
-        $enrolment_batch->delete();
-
-        return redirect()->back()->with('success', 'Enrolment batch deleted successfully.');
-    }
-
-    public function setActiveBatch($id)
-    {
-        // Set all other rows to false first
-        EnrolmentBatch::where('active_batch', true)->update(['active_batch' => false]);
-
-        // Activate only the selected batch
-        $batch = EnrolmentBatch::findOrFail($id);
-        $batch->update(['active_batch' => true]);
-
-        return redirect()->back()->with('success', 'Batch update successful!');
     }
 }

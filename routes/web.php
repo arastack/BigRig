@@ -7,18 +7,13 @@ use App\Http\Controllers\{
     DashboardController,
     CheckoutController,
     ApplicationController,
-    PaymentController,
     CourseController,
     UserController,
     SettingsController,
     WebsiteController,
-    RoleController,
-    PermissionController,
     ChatController,
     TrainingScheduleController,
-    InstructorController,
     TestimonialsController,
-    EmailSubscriptionController,
     EmailConfigController,
     PaymentGatewayConfigController,
     RegistrationFormController
@@ -32,9 +27,22 @@ use App\Http\Controllers\{
     StudentMaterialsController,
     StudentProgressController,
     StudentAttendanceController,
-    StudentAssignmentController,
     StudentAnnouncementController
 };
+
+// Admin Controllers
+use App\Http\Controllers\Admin\{
+    AdmissionController,
+    StaffController,
+    RoleController,
+    PaymentController,
+    BatchController,
+    ChangeRequestController,
+    EnquiryController,
+    NewsletterController,
+    ContentController
+};
+use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
 
 // Instructor Controllers
 use App\Http\Controllers\Instructor\{
@@ -153,13 +161,6 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
         // Attendance
         Route::get('/attendance', [StudentAttendanceController::class, 'index'])->name('attendance');
 
-        // Assignments
-        Route::controller(StudentAssignmentController::class)->prefix('assignments')->group(function () {
-            Route::get('/', 'index')->name('assignments');
-            Route::get('/{id}', 'show')->name('assignment.show');
-            Route::post('/{id}/submit', 'submit')->name('assignment.submit');
-        });
-
         // Announcements
         Route::controller(StudentAnnouncementController::class)->prefix('announcements')->group(function () {
             Route::get('/', 'index')->name('announcements');
@@ -197,9 +198,6 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
             Route::get('/', 'index')->name('materials');
             Route::get('/course/{courseId}', 'byCourse')->name('materials.course');
             Route::post('/upload', 'upload')->name('materials.upload');
-            Route::post('/store', 'store')->name('materials.store');
-            Route::get('/{id}/edit', 'edit')->name('materials.edit');
-            Route::put('/{id}', 'update')->name('materials.update');
             Route::delete('/{id}', 'destroy')->name('materials.destroy');
             Route::get('/download/{id}', 'download')->name('materials.download');
         });
@@ -234,37 +232,96 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
     | Every route below is guarded by a permission from config/permissions.php.
     */
     Route::prefix('admin')->group(function () {
+        // Admissions: applicants and students
+        Route::prefix('admissions')->name('admin.admissions.')->controller(AdmissionController::class)->group(function () {
+            Route::get('/', 'index')->name('index')->middleware('permission:read_applicants|read_student_accounts');
+            Route::get('/export', 'export')->name('export')->middleware('permission:export_students');
+            Route::get('/{student}', 'show')->name('show')->middleware('permission:read_applicants|read_student_accounts');
+            Route::post('/{student}/payment', 'recordPayment')->name('payment')->middleware('permission:create_payments');
+            Route::middleware('permission:update_applicants')->group(function () {
+                Route::put('/{student}/courses', 'updateCourses')->name('courses');
+                Route::put('/{student}/batch', 'updateBatch')->name('batch');
+                Route::put('/{student}/instructor', 'assignInstructor')->name('instructor');
+                Route::put('/{student}/documents/{document}', 'reviewDocument')->name('document');
+            });
+        });
+
         // User Management
         Route::prefix('users')->controller(UserController::class)->group(function () {
-            Route::get('/', 'indexTiles')->name('users')->middleware('permission:read_student_accounts|read_applicants');
+            Route::get('/', fn () => redirect()->route('admin.admissions.index', ['status' => 'enrolled']))->name('users')->middleware('permission:read_student_accounts|read_applicants');
             Route::patch('/deactivate/{id}', 'deactivate')->name('user.deactivate')->middleware('permission:update_suspend_user_account');
             Route::patch('/verify/{id}', 'verifyAccount')->name('user.verify')->middleware('permission:update_verify_user_account');
         });
 
-        // Roles & Permissions
+        // Staff
+        Route::controller(StaffController::class)->prefix('staff')->group(function () {
+            Route::get('/', 'index')->name('instructors')->middleware('permission:read_instructors');
+            Route::post('/', 'store')->name('instructor.store')->middleware('permission:create_instructors');
+            Route::get('/{staff}/edit', 'edit')->name('admin.staff.edit')->middleware('permission:update_instructors');
+            Route::put('/{staff}', 'update')->name('admin.staff.update')->middleware('permission:update_instructors');
+            Route::post('/{staff}/password-link', 'sendPasswordLink')->name('admin.staff.password')->middleware('permission:update_instructors');
+        });
+
+        // Roles & permissions
         Route::controller(RoleController::class)->prefix('roles')->group(function () {
             Route::get('/', 'index')->name('user-roles')->middleware('permission:read_roles_and_permissions');
-            Route::post('/store', 'roleStore')->name('user-roles.store')->middleware('permission:create_roles_and_permissions');
-            Route::delete('/destroy/{id}', 'roleDestroy')->name('user-roles.destroy')->middleware('permission:delete_roles_and_permissions');
+            Route::post('/', 'store')->name('user-roles.store')->middleware('permission:create_roles_and_permissions');
+            Route::get('/{role}', 'edit')->name('user-permissions')->middleware('permission:read_roles_and_permissions');
+            Route::put('/{role}', 'update')->name('admin.roles.update')->middleware('permission:update_roles_and_permissions');
+            Route::put('/{role}/permissions', 'updatePermissions')->name('admin.roles.permissions')->middleware('permission:update_roles_and_permissions');
+            Route::put('/{role}/courses', 'updateCourses')->name('admin.roles.courses')->middleware('permission:update_role_course_permission');
+            Route::delete('/{role}', 'destroy')->name('user-roles.destroy')->middleware('permission:delete_roles_and_permissions');
         });
 
-        Route::controller(PermissionController::class)->prefix('permissions')->group(function () {
-            Route::get('/{roleId}', 'index')->name('user-permissions')->middleware('permission:read_roles_and_permissions');
-            Route::post('/store', 'permissionStore')->name('permission.store')->middleware('permission:create_roles_and_permissions');
-            Route::post('/update', 'permissionUpdate')->name('update-role-permission')->middleware('permission:update_roles_and_permissions');
+        // Payments
+        Route::controller(PaymentController::class)->prefix('payments')->group(function () {
+            Route::get('/', 'index')->name('payments')->middleware('permission:read_payments');
+            Route::get('/export', 'export')->name('admin.payments.export')->middleware('permission:export_payments');
         });
 
-        // Instructor Management
-        Route::controller(InstructorController::class)->prefix('instructors')->group(function () {
-            Route::get('/', 'index')->name('instructors')->middleware('permission:read_instructors');
-            Route::post('/store', 'store')->name('instructor.store')->middleware('permission:create_instructors');
+        // Intake batches
+        Route::controller(BatchController::class)->prefix('batches')->group(function () {
+            Route::get('/', 'index')->name('enrolment-batches')->middleware('permission:read_enrolment_batches|manage_enrolment_batches');
+            Route::middleware('permission:manage_enrolment_batches')->group(function () {
+                Route::post('/', 'store')->name('enrolment-batch.store');
+                Route::put('/{batch}', 'update')->name('admin.batches.update');
+                Route::patch('/{batch}/activate', 'activate')->name('enrolment-batch.update');
+                Route::delete('/{batch}', 'destroy')->name('enrolment-batch.destroy');
+            });
         });
 
-        // Payment Management
-        Route::get('/payments', [PaymentController::class, 'index'])->name('payments')->middleware('permission:read_payments');
+        // Schedule change requests from instructors
+        Route::controller(ChangeRequestController::class)->prefix('change-requests')->name('admin.change-requests.')->middleware('permission:manage_schedule_change_requests')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::put('/{changeRequest}', 'update')->name('update');
+        });
 
-        // Newsletter Management
-        Route::get('/newsletter', [EmailSubscriptionController::class, 'index'])->name('newsletter')->middleware('permission:read_newsletter');
+        // School-wide announcements
+        Route::controller(AdminAnnouncementController::class)->prefix('announcements')->name('admin.announcements.')->middleware('permission:manage_announcements')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::put('/{announcement}', 'update')->name('update');
+            Route::patch('/{announcement}/toggle', 'toggle')->name('toggle');
+            Route::delete('/{announcement}', 'destroy')->name('destroy');
+        });
+
+        // Website enquiries
+        Route::controller(EnquiryController::class)->prefix('enquiries')->name('admin.enquiries.')->middleware('permission:read_contact_messages')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{enquiry}', 'show')->name('show');
+            Route::patch('/{enquiry}', 'update')->name('update');
+            Route::delete('/{enquiry}', 'destroy')->name('destroy');
+        });
+
+        // Newsletter subscribers
+        Route::controller(NewsletterController::class)->prefix('newsletter')->group(function () {
+            Route::get('/', 'index')->name('newsletter')->middleware('permission:read_newsletter');
+            Route::get('/export', 'export')->name('admin.newsletter.export')->middleware('permission:read_newsletter');
+            Route::delete('/{subscriber}', 'destroy')->name('admin.newsletter.destroy')->middleware('permission:delete_newsletter');
+        });
+
+        // Website content hub
+        Route::get('/content', [ContentController::class, 'index'])->name('admin.content')->middleware('permission:update_website_management');
 
         // Testimonials Management
         Route::controller(TestimonialsController::class)->prefix('testimonials')->group(function () {
@@ -331,16 +388,6 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
             Route::post('/store', 'trainingObjectiveStore')->name('objective.store');
             Route::put('/update', 'trainingObjectiveUpdate')->name('objective.update');
             Route::delete('/destroy/{id}', 'trainingObjectiveDestroy')->name('objective.destroy');
-        });
-
-        // Enrollment Batches
-        Route::prefix('enrolment-batch')->group(function () {
-            Route::get('/', 'enrolmentBatchIndex')->name('enrolment-batches')->middleware('permission:read_enrolment_batches|manage_enrolment_batches');
-            Route::middleware('permission:manage_enrolment_batches')->group(function () {
-                Route::post('/store', 'enrolmentBatchStore')->name('enrolment-batch.store');
-                Route::delete('/destroy/{id}', 'enrolmentBatchDestroy')->name('enrolment-batch.destroy');
-                Route::patch('/set-active/{id}', 'setActiveBatch')->name('enrolment-batch.update');
-            });
         });
 
         // Website content

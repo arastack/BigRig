@@ -10,33 +10,7 @@ use App\Models\Role;
 
 class UserController extends Controller
 {
-    public function indexTabs()
-    {
-        $users = User::paginate(8);
-        return view('pages/community/users-tabs', compact('users'));  
-    }
 
-    public function indexTiles()
-    {
-        // if (!Auth::user()->hasPermission('read_users_page')) {
-        //     return redirect()->back()->with('error', 'Permission denied!');
-        // }
-
-        if (Auth::user()->hasPermission('read_suspend_user_account')) {
-            $users = User::whereHas('roles', function ($query) {
-                        $query->where('roles.id', 10);
-                    })
-                    ->paginate(15);
-        } else {
-            $users = User::where('user_active', 1)
-                    ->whereHas('roles', function ($query) {
-                        $query->where('roles.id', 10);
-                    })
-                    ->paginate(15);
-        }
-        
-        return view('pages/community/users-tiles', compact('users'));
-    }
 
     public function userProfile() {
         $userInfo = Auth::user();

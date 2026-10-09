@@ -41,6 +41,23 @@ export default {
           900: '#111110',
           950: '#0A0A09',
         },
+        // Default Tailwind accents used by older portal screens, folded into the brand
+        blue: {
+          50: '#FFFDE5', 100: '#FFF9BF', 200: '#FFF380', 300: '#FFEC40', 400: '#E6CE00',
+          500: '#2A2A26', 600: '#111110', 700: '#0A0A09', 800: '#0A0A09', 900: '#0A0A09', 950: '#0A0A09',
+        },
+        indigo: {
+          50: '#F6F6F5', 100: '#E9E9E7', 200: '#D3D3CF', 300: '#A9A9A3', 400: '#7A7A73',
+          500: '#3D3D37', 600: '#2A2A26', 700: '#1A1A17', 800: '#111110', 900: '#0A0A09', 950: '#0A0A09',
+        },
+        purple: {
+          50: '#F6F6F5', 100: '#E9E9E7', 200: '#D3D3CF', 300: '#A9A9A3', 400: '#7A7A73',
+          500: '#3D3D37', 600: '#2A2A26', 700: '#1A1A17', 800: '#111110', 900: '#0A0A09', 950: '#0A0A09',
+        },
+        orange: {
+          50: '#FFFDE5', 100: '#FFF9BF', 200: '#FFF380', 300: '#FFEC40', 400: '#FFE500',
+          500: '#CCAE00', 600: '#8F7A00', 700: '#5C4F00', 800: '#332C00', 900: '#332C00', 950: '#332C00',
+        },
         gray: {
           50: '#F9FAFB',
           100: '#F3F4F6',
@@ -54,18 +71,20 @@ export default {
           900: '#111827',
           950: '#030712',
         },
+        // The admin template's violet accent, remapped to the brand: light tints are
+        // yellow, solid shades are near-black, so older screens match the new look.
         violet: {
-          50: '#F1EEFF',
-          100: '#E6E1FF',
-          200: '#D2CBFF',
-          300: '#B7ACFF',
-          400: '#9C8CFF',
-          500: '#8470FF',
-          600: '#755FF8',
-          700: '#5D47DE',
-          800: '#4634B1',
-          900: '#2F227C',
-          950: '#1C1357',
+          50: '#FFFDE5',
+          100: '#FFF9BF',
+          200: '#FFF380',
+          300: '#FFEC40',
+          400: '#E6CE00',
+          500: '#111110',
+          600: '#2A2A26',
+          700: '#0A0A09',
+          800: '#0A0A09',
+          900: '#0A0A09',
+          950: '#0A0A09',
         },
         sky: {
           50: '#E3F3FF',

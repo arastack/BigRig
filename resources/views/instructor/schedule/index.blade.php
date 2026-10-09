@@ -53,6 +53,10 @@ use Carbon\Carbon;
                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                             Export Month as PDF
                         </a>
+                        <a href="{{ route('instructor.schedule.export', ['format' => 'excel', 'range' => 'all']) }}"
+                           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            Export All as Spreadsheet (CSV)
+                        </a>
                         <a href="{{ route('instructor.schedule.export', ['format' => 'ics', 'range' => 'all']) }}"
                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                             Export to Calendar (ICS)

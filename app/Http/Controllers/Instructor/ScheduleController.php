@@ -294,17 +294,32 @@ class ScheduleController extends Controller
      */
     private function exportToPDF($schedules)
     {
-        // Implement PDF export using a package like DomPDF or TCPDF
-        return redirect()->back()->with('info', 'PDF export will be implemented with PDF package installation');
+        $instructor = Auth::user();
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.instructor-schedule', compact('schedules', 'instructor'))
+            ->setPaper('a4', 'landscape')
+            ->download('bigrig-schedule-' . now()->format('Y-m-d') . '.pdf');
     }
 
     /**
-     * Export to Excel (placeholder)
+     * Export to CSV (opens in Excel)
      */
     private function exportToExcel($schedules)
     {
-        // Implement Excel export using Laravel Excel package
-        return redirect()->back()->with('info', 'Excel export will be implemented with Laravel Excel package installation');
+        return response()->streamDownload(function () use ($schedules) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Date', 'Start', 'End', 'Course', 'Topic', 'Type', 'Batch', 'Students']);
+            foreach ($schedules as $s) {
+                fputcsv($out, [
+                    $s->schedule_date->format('Y-m-d'),
+                    Carbon::parse($s->time_start)->format('H:i'),
+                    Carbon::parse($s->time_stop)->format('H:i'),
+                    $s->course?->objective, $s->topic?->topic, ucfirst($s->session_type ?? 'theory'),
+                    $s->batch?->batch_name, count($s->studentIds()),
+                ]);
+            }
+            fclose($out);
+        }, 'bigrig-schedule-' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
     }
 
     /**

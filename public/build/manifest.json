@@ -1,41 +1,19 @@
 {
-  "public/images/company-icon-02.svg": {
-    "file": "assets/company-icon-02-y4vjFOm-.svg",
-    "src": "public/images/company-icon-02.svg"
-  },
-  "public/images/company-icon-03.svg": {
-    "file": "assets/company-icon-03-mUetZzHu.svg",
-    "src": "public/images/company-icon-03.svg"
-  },
-  "public/images/company-icon-04.svg": {
-    "file": "assets/company-icon-04-Cb3teMSS.svg",
-    "src": "public/images/company-icon-04.svg"
-  },
-  "public/images/company-icon-06.svg": {
-    "file": "assets/company-icon-06-De36XE2J.svg",
-    "src": "public/images/company-icon-06.svg"
-  },
   "resources/css/app.css": {
-    "file": "assets/app-DR-1kj3W.css",
+    "file": "assets/app-CJVFI1Q0.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/css/site.css": {
-    "file": "assets/site-BxmJ6fmy.css",
+    "file": "assets/site-B1EWsGdk.css",
     "src": "resources/css/site.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BACq42g_.js",
+    "file": "assets/app-DA8HwHSC.js",
     "name": "app",
     "src": "resources/js/app.js",
-    "isEntry": true,
-    "assets": [
-      "assets/company-icon-06-De36XE2J.svg",
-      "assets/company-icon-02-y4vjFOm-.svg",
-      "assets/company-icon-03-mUetZzHu.svg",
-      "assets/company-icon-04-Cb3teMSS.svg"
-    ]
+    "isEntry": true
   },
   "resources/js/site.js": {
     "file": "assets/site-B9t2hb1D.js",
