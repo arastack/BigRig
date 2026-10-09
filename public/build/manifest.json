@@ -16,12 +16,17 @@
     "src": "public/images/company-icon-06.svg"
   },
   "resources/css/app.css": {
-    "file": "assets/app-CUSwLwq0.css",
+    "file": "assets/app-CErzcfFS.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
+  "resources/css/site.css": {
+    "file": "assets/site-C_Ux3kSY.css",
+    "src": "resources/css/site.css",
+    "isEntry": true
+  },
   "resources/js/app.js": {
-    "file": "assets/app-Wizg26-v.js",
+    "file": "assets/app-BACq42g_.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -31,5 +36,11 @@
       "assets/company-icon-03-mUetZzHu.svg",
       "assets/company-icon-04-Cb3teMSS.svg"
     ]
+  },
+  "resources/js/site.js": {
+    "file": "assets/site-B9t2hb1D.js",
+    "name": "site",
+    "src": "resources/js/site.js",
+    "isEntry": true
   }
 }

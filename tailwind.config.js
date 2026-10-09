@@ -15,6 +15,32 @@ export default {
   theme: {
     extend: {
       colors: {
+        // BigRig brand: cadmium yellow from the logo, near-black "ink", white
+        brand: {
+          50: '#FFFDE5',
+          100: '#FFF9BF',
+          200: '#FFF380',
+          300: '#FFEC40',
+          400: '#FFE500',
+          500: '#F5D400',
+          600: '#CCAE00',
+          700: '#8F7A00',
+          800: '#5C4F00',
+          900: '#332C00',
+        },
+        ink: {
+          50: '#F6F6F5',
+          100: '#E9E9E7',
+          200: '#D3D3CF',
+          300: '#A9A9A3',
+          400: '#7A7A73',
+          500: '#57574F',
+          600: '#3D3D37',
+          700: '#2A2A26',
+          800: '#1A1A17',
+          900: '#111110',
+          950: '#0A0A09',
+        },
         gray: {
           50: '#F9FAFB',
           100: '#F3F4F6',
@@ -96,6 +122,7 @@ export default {
       },
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
+        display: ['"Barlow Condensed"', 'Inter', 'sans-serif'],
       },
       fontSize: {
         xs: ['0.75rem', { lineHeight: '1.5' }],

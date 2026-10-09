@@ -26,3 +26,26 @@ if (! function_exists('clean_html')) {
         return $sanitizer->sanitize((string) $html);
     }
 }
+
+if (! function_exists('img')) {
+    /**
+     * URL of an uploaded image resized to the given width, as WebP.
+     */
+    function img(?string $path, int $width = 1200): ?string
+    {
+        return \App\Support\Image::url($path, $width);
+    }
+}
+
+if (! function_exists('brand_logo')) {
+    /**
+     * The site logo with its padding trimmed. Variant "light" is for light backgrounds.
+     */
+    function brand_logo(string $variant = 'light', int $width = 480): ?string
+    {
+        $settings = once(fn () => \App\Models\Settings::first());
+        $path = $variant === 'dark' ? $settings?->dark_theme_logo : $settings?->light_theme_logo;
+
+        return \App\Support\Image::url($path, $width, 90, true);
+    }
+}

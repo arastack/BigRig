@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Models\Settings;
 
 // Controllers
 use App\Http\Controllers\{
@@ -59,24 +58,19 @@ use App\Livewire\{
 |--------------------------------------------------------------------------
 */
 
-// Landing page variant is read per request (not at route-load time) so admin changes apply immediately
-Route::get('/', function () {
-    $controller = app(WebsiteController::class);
-
-    return (int) (Settings::first()->preferred_landing_page ?? 1) === 1
-        ? $controller->index()
-        : $controller->home();
-})->name('index');
-
 // Public Website Routes
 Route::controller(WebsiteController::class)->group(function () {
+    Route::get('/', 'home')->name('index');
     Route::get('/about-us', 'about')->name('about-us');
     Route::get('/courses', 'courses')->name('courses');
     Route::get('/course-information/{name}', 'course_details')->name('course');
     Route::get('/our-instructors', 'instructors')->name('our-instructors');
     Route::get('/faq', 'faq')->name('faq');
     Route::get('/contact', 'contact')->name('contact');
-    Route::post('/email-subscription', 'email_subscription')->name('email-subscription');
+    Route::post('/contact', 'contactStore')->name('contact.store')->middleware('throttle:5,10');
+    Route::get('/privacy-policy', 'privacy')->name('privacy');
+    Route::get('/terms-and-conditions', 'terms')->name('terms');
+    Route::post('/email-subscription', 'email_subscription')->name('email-subscription')->middleware('throttle:10,10');
 });
 
 // Paystack server-to-server notifications (signature-verified, CSRF-exempt)
@@ -414,5 +408,5 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
 |--------------------------------------------------------------------------
 */
 Route::fallback(function () {
-    return response()->view('pages.utility.404', [], 404);
+    abort(404);
 });

@@ -26,27 +26,26 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (Schema::hasTable('email_configs')) {
-            $mail = EmailConfig::first(); // or use a cache if performance is critical
-
-            if ($mail) {
-                $decrypted_password = Crypt::decryptString($mail->smtp_password);
+        if (Schema::hasTable('email_configs') && ($mail = EmailConfig::first())) {
+            try {
                 Config::set('mail.mailers.smtp.host', $mail->smtp_host);
                 Config::set('mail.mailers.smtp.port', $mail->smtp_port);
                 Config::set('mail.mailers.smtp.username', $mail->smtp_username);
-                Config::set('mail.mailers.smtp.password', $decrypted_password);
+                Config::set('mail.mailers.smtp.password', $mail->smtp_password ? Crypt::decryptString($mail->smtp_password) : null);
                 Config::set('mail.mailers.smtp.encryption', $mail->smtp_encryption);
                 Config::set('mail.from.address', $mail->from_email);
                 Config::set('mail.from.name', $mail->from_name);
+            } catch (DecryptException $e) {
+                report($e);
             }
-        };
+        }
 
         if (Schema::hasTable('settings')) {
-            $settings = Settings::first();
+            // Shared with every view, loaded once per request
             view()->composer('*', function ($view) {
                 $view->with([
-                    'settings' => Settings::first(),
-                    'activeBatch' => EnrolmentBatch::where('active_batch', true)->first(),
+                    'settings' => once(fn () => Settings::first()),
+                    'activeBatch' => once(fn () => EnrolmentBatch::where('active_batch', true)->first()),
                 ]);
             });
         }
