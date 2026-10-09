@@ -155,7 +155,7 @@
                                             </td>
                                             <td class="p-2">
                                                 <div class="text-left" title="{{ $schedule->studentNames }}">
-                                                    {{ count(json_decode($schedule->students)) }}
+                                                    {{ count($schedule->studentIds()) }}
                                                 </div>
                                             </td>
                                             @if (Auth::user()->hasPermission('delete_training_schedule'))

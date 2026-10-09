@@ -26,6 +26,25 @@ class TrainingSchedule extends Model
         'students' => 'array', // If students is stored as JSON
     ];
 
+    /**
+     * Student ids on this session. Older rows stored the JSON encoded twice.
+     */
+    public function studentIds(): array
+    {
+        $ids = json_decode($this->attributes['students'] ?? '[]', true);
+
+        if (is_string($ids)) {
+            $ids = json_decode($ids, true);
+        }
+
+        return array_map('intval', (array) $ids);
+    }
+
+    public function hasStudent(int $studentId): bool
+    {
+        return in_array($studentId, $this->studentIds(), true);
+    }
+
     // Relationships
     public function batch()
     {

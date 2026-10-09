@@ -49,3 +49,20 @@ if (! function_exists('brand_logo')) {
         return \App\Support\Image::url($path, $width, 90, true);
     }
 }
+
+if (! function_exists('after_response')) {
+    /**
+     * Run work (usually sending email) after the response has been sent, so a slow
+     * or unreachable mail server never delays the page. Failures are logged, not thrown.
+     */
+    function after_response(callable $callback, string $description = 'Deferred task'): void
+    {
+        app()->terminating(function () use ($callback, $description) {
+            try {
+                $callback();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("{$description} failed: " . $e->getMessage());
+            }
+        });
+    }
+}

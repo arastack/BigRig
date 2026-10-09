@@ -55,74 +55,90 @@
     <div class="title">Student Application Form</div>
     <div class="note" style="text-align:center;">Please complete in BLOCK LETTERS. Fields marked <span class="req">*</span> are required.</div>
 
-    {{-- Step 1: Personal Information --}}
-    <div class="section">1. Personal Information</div>
+    @php
+        $options = config('admissions.options');
+        $labels = config('admissions.labels');
+        $line = fn ($label, $required = false) => '<div class="label">' . e($label) . ($required ? ' <span class="req">*</span>' : '') . '</div><div class="line"></div>';
+        $ticks = fn ($values, $field = null) => collect($values)->map(fn ($v) => '<span class="option"><span class="box">&#9744;</span>' . e($field ? ($labels[$field][$v] ?? $v) : $v) . '</span>')->implode(' ');
+    @endphp
+
+    {{-- Mirrors the online application: About you --}}
+    <div class="section">1. Personal Details</div>
     <table>
         <tr>
-            <td class="pad-r" style="width:50%"><div class="label">First Name <span class="req">*</span></div><div class="line"></div></td>
-            <td style="width:50%"><div class="label">Middle Name</div><div class="line"></div></td>
+            <td class="pad-r" style="width:33%">{!! $line('First Name', true) !!}</td>
+            <td class="pad-r" style="width:33%">{!! $line('Middle Name') !!}</td>
+            <td style="width:34%">{!! $line('Last Name', true) !!}</td>
         </tr>
         <tr>
-            <td class="pad-r"><div class="label">Last Name <span class="req">*</span></div><div class="line"></div></td>
-            <td>
-                <div class="label">Gender <span class="req">*</span></div>
-                <span class="option"><span class="box">&#9744;</span>Male</span>
-                <span class="option"><span class="box">&#9744;</span>Female</span>
-            </td>
-        </tr>
-        <tr>
-            <td class="pad-r"><div class="label">Mobile Number <span class="req">*</span></div><div class="line"></div></td>
-            <td><div class="label">Email Address <span class="req">*</span></div><div class="line"></div></td>
+            <td class="pad-r"><div class="label">Gender <span class="req">*</span></div>{!! $ticks(['Male', 'Female']) !!}</td>
+            <td class="pad-r">{!! $line('Date of Birth (DD/MM/YYYY)', true) !!}</td>
+            <td>{!! $line('NIN (11 digits)', true) !!}</td>
         </tr>
     </table>
 
-    {{-- Step 2: Medical History --}}
-    <div class="section">2. Medical History</div>
+    <div class="section">2. Contact Details</div>
     <table>
         <tr>
-            <td class="pad-r" style="width:50%"><div class="label">Weight (kg)</div><div class="line"></div></td>
-            <td style="width:50%"><div class="label">Height (ft)</div><div class="line"></div></td>
+            <td class="pad-r" style="width:50%">{!! $line('Phone Number', true) !!}</td>
+            <td style="width:50%">{!! $line('Email Address', true) !!}</td>
+        </tr>
+        <tr><td colspan="2">{!! $line('Home Address', true) !!}</td></tr>
+        <tr>
+            <td class="pad-r">{!! $line('Town / City', true) !!}</td>
+            <td>{!! $line('State', true) !!}</td>
         </tr>
     </table>
 
-    <div class="label" style="margin-top:8px;">Answer the disability check below appropriately:</div>
+    <div class="section">3. Driving Licence <span style="font-weight:normal; text-transform:none;">(if you have one — required for CDL and BRT/School Bus)</span></div>
+    <table>
+        <tr>
+            <td class="pad-r" style="width:50%">{!! $line('Licence Number') !!}</td>
+            <td style="width:50%">{!! $line('Expiry Date') !!}</td>
+        </tr>
+    </table>
 
-    <div class="label">Visual Impairment <span class="req">*</span></div>
-    @foreach (['None', 'Long Sightedness', 'Short Sightedness', 'Color Blindness'] as $option)
-        <span class="option"><span class="box">&#9744;</span>{{ $option }}</span>
-    @endforeach
+    <div class="section">4. Next of Kin</div>
+    <table>
+        <tr>
+            <td class="pad-r" style="width:40%">{!! $line('Full Name', true) !!}</td>
+            <td class="pad-r" style="width:30%">{!! $line('Phone Number', true) !!}</td>
+            <td style="width:30%">{!! $line('Relationship', true) !!}</td>
+        </tr>
+    </table>
 
-    <div class="label">Hearing Aid <span class="req">*</span></div>
-    @foreach (['None', 'BTE', 'ITE', 'RITE', 'ITC', 'CROS/BiCros'] as $option)
-        <span class="option"><span class="box">&#9744;</span>{{ $option }}</span>
-    @endforeach
+    {{-- Mirrors the online application: Health --}}
+    <div>
+        <div class="section">5. Health Declaration</div>
+        <div class="note">Operating heavy vehicles safely depends on your health. This information is confidential.</div>
+        <table>
+            <tr>
+                <td class="pad-r" style="width:50%">{!! $line('Weight (kg)') !!}</td>
+                <td style="width:50%">{!! $line('Height (ft)') !!}</td>
+            </tr>
+        </table>
+        @foreach ([
+            'visual_impairment' => 'Do you have any vision condition?',
+            'hearing_aid' => 'Do you use a hearing aid?',
+            'physical_disability' => 'Do you have any of these conditions?',
+            'weed' => 'Do you use marijuana (weed), cocaine or other recreational drugs?',
+            'alcohol' => 'How often do you drink alcohol?',
+        ] as $field => $question)
+            <div class="label">{{ $question }} <span class="req">*</span></div>
+            {!! $ticks($options[$field], $field) !!}
+        @endforeach
 
-    <div class="label">Physical Disability <span class="req">*</span></div>
-    @foreach (['None', 'Ulcer', 'Cancer', 'HIV/AIDS', 'Abdominal Pain'] as $option)
-        <span class="option"><span class="box">&#9744;</span>{{ $option }}</span>
-    @endforeach
+        <div class="label">Are you taking any prescribed medication?</div>
+        <div class="line"></div>
+        <div class="label">Have you ever failed a drug test? If yes, when and why?</div>
+        <div class="line"></div>
 
-    <div class="label" style="margin-top:8px;">Answer the drug test check below appropriately:</div>
-
-    <div class="label">Marijuana (Weed) / Cocaine <span class="req">*</span></div>
-    @foreach (['Yes', 'No'] as $option)
-        <span class="option"><span class="box">&#9744;</span>{{ $option }}</span>
-    @endforeach
-
-    <div class="label">Alcohol <span class="req">*</span></div>
-    @foreach (['No', 'Often', 'Casually', 'Daily User'] as $option)
-        <span class="option"><span class="box">&#9744;</span>{{ $option }}</span>
-    @endforeach
-
-    <div class="label">Are you currently taking any prescribed medications?</div>
-    <div class="line"></div><div class="line"></div>
-
-    <div class="label">Have you ever failed a drug test?</div>
-    <div class="line"></div><div class="line"></div>
+        <p class="note" style="margin-top:8px;"><span class="box">&#9744;</span> I confirm this health information is true and complete, and I consent to BigRig processing it to assess my fitness to train safely. <span class="req">*</span></p>
+    </div>
 
     {{-- Step 3: Training Objectives --}}
     <div class="keep">
-        <div class="section">3. Training Objective(s)</div>
+        <div class="section">6. Course(s)</div>
         <div class="note" style="margin-bottom:6px;">Tick at least one training objective. <span class="req">*</span></div>
         <table class="courses">
             <thead>
@@ -158,10 +174,19 @@
         </table>
     </div>
 
+    {{-- Mirrors the online application: Documents --}}
+    <div class="keep">
+        <div class="section">7. Documents Checklist</div>
+        <div class="note">Please submit this form with:</div>
+        <div style="margin-top:4px;"><span class="option"><span class="box">&#9744;</span>Recent passport photograph (affixed above)</span></div>
+        <div><span class="option"><span class="box">&#9744;</span>Photocopy of NIN slip or card</span></div>
+        <div><span class="option"><span class="box">&#9744;</span>Photocopy of driver's licence (CDL and BRT/School Bus applicants)</span></div>
+    </div>
+
     {{-- Declaration --}}
     <div class="keep">
         <div class="section">Declaration</div>
-        <div class="note">I declare that the information given in this form is true and complete to the best of my knowledge. I understand that providing false information, particularly regarding my medical history and drug use, may lead to the cancellation of my enrolment.</div>
+        <div class="note">I declare that the information given in this form is true and complete to the best of my knowledge. I understand that providing false information, particularly regarding my medical history and drug use, may lead to the cancellation of my enrolment. I agree to the school's terms &amp; conditions and privacy policy, available at {{ preg_replace('#^https?://#', '', url('/')) }}.</div>
         <table style="margin-top: 18px;">
             <tr>
                 <td class="pad-r" style="width:60%"><div class="line"></div><div class="muted">Applicant's Signature</div></td>

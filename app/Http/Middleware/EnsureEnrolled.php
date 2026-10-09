@@ -14,7 +14,7 @@ class EnsureEnrolled
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user()?->hasCompletedPayment()) {
-            return redirect()->route('checkout.pay');
+            return redirect()->route('application');
         }
 
         return $next($request);

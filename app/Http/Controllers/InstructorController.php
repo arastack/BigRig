@@ -98,11 +98,7 @@ class InstructorController extends Controller
         $user->roles()->attach($request->input('userRole'));
 
         // Best effort: also email a link to choose their own password.
-        try {
-            Password::sendResetLink(['email' => $user->email]);
-        } catch (\Throwable $e) {
-            report($e);
-        }
+        after_response(fn () => Password::sendResetLink(['email' => $user->email]), 'Staff password link email');
 
         return redirect()->back()->with('success', "Account created for {$user->firstName}. Temporary password: {$temporaryPassword} — share it securely; they should change it after signing in.");
     }

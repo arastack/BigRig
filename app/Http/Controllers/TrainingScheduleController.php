@@ -47,7 +47,7 @@ class TrainingScheduleController extends Controller
 
         // Attach student names to each schedule
         $schedules->transform(function ($schedule) {
-            $studentIds = json_decode($schedule->students, true); // Decode JSON array of student IDs
+            $studentIds = $schedule->studentIds();
 
             // Fetch student names
             $schedule->studentNames = User::whereIn('id', $studentIds)
@@ -193,7 +193,7 @@ class TrainingScheduleController extends Controller
                 'schedule_date' => $formattedDate,
                 'time_start' => $formattedTimeStart,
                 'time_stop' => $formattedTimeStop,
-                'students' => json_encode($assignedStudents), // Store as JSON array
+                'students' => array_map('intval', (array) $assignedStudents), // cast to JSON by the model
             ]);
         }
 

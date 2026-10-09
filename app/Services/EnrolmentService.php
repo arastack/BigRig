@@ -8,6 +8,7 @@ use App\Models\RoleCourse;
 use App\Models\StudentInstructorDistribution;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Notifications\PaymentConfirmed;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -19,11 +20,12 @@ class EnrolmentService
 {
     public function completePayment(Subscription $subscription, string $reference, string $method): void
     {
-        DB::transaction(function () use ($subscription, $reference, $method) {
+        $newlyPaid = DB::transaction(function () use ($subscription, $reference, $method) {
             $subscription = Subscription::lockForUpdate()->findOrFail($subscription->id);
 
+            // The callback and the webhook can both arrive; only the first one enrols
             if ($subscription->isPaid()) {
-                return;
+                return false;
             }
 
             $subscription->update([
@@ -39,7 +41,16 @@ class EnrolmentService
             }
 
             $this->assignInstructors($student, $subscription->objectiveIds());
+
+            return true;
         });
+
+        if (! $newlyPaid) {
+            return;
+        }
+
+        $subscription = $subscription->fresh();
+        after_response(fn () => $subscription->user->notify(new PaymentConfirmed($subscription)), 'Payment confirmation email');
     }
 
     /**

@@ -17,7 +17,6 @@ use App\Models\Testimonials;
 use App\Models\TrainingObjective;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class WebsiteController extends Controller
@@ -163,15 +162,11 @@ class WebsiteController extends Controller
             return;
         }
 
-        try {
-            Mail::raw(
+        after_response(fn () => Mail::raw(
                 "New enquiry from the website\n\n"
                 . "Name: {$message->name}\nEmail: {$message->email}\nPhone: {$message->phone}\n"
                 . 'Course: ' . ($message->course?->objective ?? '—') . "\n\n{$message->message}",
-                fn ($mail) => $mail->to($to)->replyTo($message->email, $message->name)->subject('Website enquiry: ' . ($message->subject ?: $message->name))
-            );
-        } catch (\Throwable $e) {
-            Log::warning('Contact notification email failed: ' . $e->getMessage());
-        }
+            fn ($mail) => $mail->to($to)->replyTo($message->email, $message->name)->subject('Website enquiry: ' . ($message->subject ?: $message->name))
+        ), 'Contact notification email');
     }
 }

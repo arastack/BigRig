@@ -21,23 +21,6 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Display the payment view for the authenticated user's subscription.
-     */
-    public function index()
-    {
-        $subscription = Subscription::where('user_id', Auth::id())->latest()->first();
-
-        if (! $subscription || $subscription->isPaid()) {
-            return redirect('/dashboard');
-        }
-
-        $objectives = $subscription->objectives ?? [];
-        $exchangeRate = 1535;
-
-        return view('checkout.pay', compact('subscription', 'objectives', 'exchangeRate'));
-    }
-
-    /**
      * Initiates a Paystack payment and redirects to the authorization URL.
      */
     public function redirectToPaystack(Request $request)
@@ -89,7 +72,7 @@ class CheckoutController extends Controller
         $reference = (string) $request->query('reference');
 
         if ($reference === '') {
-            return redirect()->route('checkout.pay')->with('error', 'No payment reference was provided.');
+            return redirect()->route('application')->with('error', 'No payment reference was provided.');
         }
 
         $result = $this->verifyAndComplete($reference, Auth::id());
@@ -98,7 +81,7 @@ class CheckoutController extends Controller
             return redirect('/dashboard')->with('success', 'Payment successful! Welcome to BigRig — your courses and instructors are now available.');
         }
 
-        return redirect()->route('checkout.pay')->with('error', $result);
+        return redirect()->route('application')->with('error', $result);
     }
 
     /**

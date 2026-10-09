@@ -26,6 +26,11 @@ class Medical extends Model
         'prescribed_medication',
         'failed_drug_test',
         'attachments',
+        'consent_given_at',
+    ];
+
+    protected $casts = [
+        'consent_given_at' => 'datetime',
     ];
 
     /**

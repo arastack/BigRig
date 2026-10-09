@@ -1,47 +1,15 @@
-@section('title', 'Reset Password')
-<x-authentication-layout>
-    <!-- Header -->
-    <div class="flex-1">
-        <div class="flex items-center justify-between h-28 px-4 sm:px-6 lg:px-8">
-            <!-- Logo -->
-            <a class="block" href="{{ url('/home') }}">
-                <!-- Light Theme Logo -->
-                <img class="block dark:hidden w-40 h-40" src="{{ Storage::url($settings->light_theme_logo) }}" alt="Light Logo" />
-
-                <!-- Dark Theme Logo -->
-                <img class="hidden dark:block w-40 h-40" src="{{ Storage::url($settings->dark_theme_logo) }}" alt="Dark Logo" />
-            </a>
-        </div>
-    </div>
-
-    <div class="max-w-sm mx-auto w-full px-4 py-8">
-        <x-validation-errors class="mb-4" />
-
-        <form method="POST" action="{{ route('password.update') }}">
+<x-site.auth title="Choose a new password">
+    <h1 class="text-5xl">Choose a new password</h1>
+    <p class="mt-2 text-ink-500">Use at least 8 characters. A mix of words, numbers and symbols is strongest.</p>
+    <div class="mt-8">
+        <x-site.status />
+        <form method="POST" action="{{ route('password.update') }}" class="space-y-5">
             @csrf
-
             <input type="hidden" name="token" value="{{ $request->route('token') }}">
-
-            <div class="block">
-                <x-label for="email" value="{{ __('Email') }}" />
-                <x-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus />
-            </div>
-
-            <div class="mt-4">
-                <x-label for="password" value="{{ __('Password') }}" />
-                <x-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            </div>
-
-            <div class="mt-4">
-                <x-label for="password_confirmation" value="{{ __('Confirm Password') }}" />
-                <x-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
-            </div>
-
-            <div class="flex items-center justify-end mt-4">
-                <x-button>
-                    {{ __('Reset Password') }}
-                </x-button>
-            </div>
+            <x-site.input name="email" label="Email address" type="email" :value="$request->email" required autocomplete="username" />
+            <x-site.input name="password" label="New password" type="password" required autocomplete="new-password" />
+            <x-site.input name="password_confirmation" label="Confirm new password" type="password" required autocomplete="new-password" />
+            <button class="btn-brand w-full">Save new password</button>
         </form>
     </div>
-</x-authentication-layout>
+</x-site.auth>

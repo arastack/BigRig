@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
     DashboardController,
     CheckoutController,
+    ApplicationController,
     PaymentController,
     CourseController,
     UserController,
@@ -93,10 +94,19 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
     |--------------------------------------------------------------------------
     */
     Route::prefix('checkout')->controller(CheckoutController::class)->group(function () {
-        Route::get('/pay', 'index')->name('checkout.pay');
-        Route::post('/pay', 'redirectToPaystack')->name('payment');
+        Route::get('/pay', fn () => redirect()->route('application'))->name('checkout.pay');
+        Route::post('/pay', 'redirectToPaystack')->name('payment')->middleware('portal:student');
         Route::get('/payment/callback', 'handleGatewayCallback')->name('payment.callback');
     });
+
+    // Applicant's own application: progress, courses, documents
+    Route::prefix('application')->controller(ApplicationController::class)->middleware('portal:student')->group(function () {
+        Route::get('/', 'show')->name('application');
+        Route::put('/courses', 'updateCourses')->name('application.courses');
+        Route::post('/documents', 'uploadDocument')->name('application.documents.store');
+        Route::delete('/documents/{document}', 'destroyDocument')->name('application.documents.destroy');
+    });
+    Route::get('/application/documents/{document}', [ApplicationController::class, 'downloadDocument'])->name('application.documents.show');
 
     /*
     |--------------------------------------------------------------------------

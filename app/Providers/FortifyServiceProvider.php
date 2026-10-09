@@ -35,7 +35,7 @@ class FortifyServiceProvider extends ServiceProvider
 
                 // Applicants who have not paid yet continue where they left off.
                 if ($user->isStudent() && ! $user->hasCompletedPayment()) {
-                    return redirect()->route('checkout.pay');
+                    return redirect()->route('application');
                 }
 
                 return redirect()->intended('/dashboard');
@@ -46,7 +46,7 @@ class FortifyServiceProvider extends ServiceProvider
         $this->app->instance(RegisterResponse::class, new class implements RegisterResponse {
             public function toResponse($request)
             {
-                return redirect('/checkout/pay'); // Redirect to checkout
+                return redirect()->route('application');
             }
         });
 

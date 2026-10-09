@@ -28,7 +28,17 @@ class User extends Authenticatable
         'middleName',
         'lastName',
         'gender',
+        'date_of_birth',
         'mobileNumber',
+        'address',
+        'city',
+        'state',
+        'nin',
+        'drivers_licence_number',
+        'drivers_licence_expiry',
+        'next_of_kin_name',
+        'next_of_kin_phone',
+        'next_of_kin_relationship',
         'email',
         'email_verified_at',
         'password',
@@ -63,6 +73,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'suspended_at' => 'datetime',
+        'date_of_birth' => 'date',
+        'drivers_licence_expiry' => 'date',
         'user_active' => 'boolean',
     ];
 
@@ -81,6 +93,11 @@ class User extends Authenticatable
     public function medical()
     {
         return $this->hasOne(Medical::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(ApplicantDocument::class);
     }
 
     /**
