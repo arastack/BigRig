@@ -72,6 +72,20 @@ class CourseController extends Controller
         return redirect()->back()->with('success', 'New curriculum added successfully.');
     }
 
+    public function curriculumUpdate(Request $request, $id)
+    {
+        $curriculum = Curriculum::findOrFail($id);
+
+        $data = $request->validate([
+            'topic' => 'required|string|max:255',
+            'summary' => 'required|string',
+        ]);
+
+        $curriculum->update($data);
+
+        return redirect()->back()->with('success', 'Curriculum topic updated.');
+    }
+
     public function curriculumDestroy($id)
     {
         $curriculum = Curriculum::findOrFail($id);

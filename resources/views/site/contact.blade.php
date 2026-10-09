@@ -2,9 +2,9 @@
     $phone = $settings->business_contact ?? null;
     $whatsapp = ($settings->show_whatsapp_support ?? false) && $settings->whatsapp_support ? preg_replace('/\D/', '', $settings->whatsapp_support) : null;
 @endphp
-<x-site.layout title="Contact us" description="Call, WhatsApp, email or visit BigRig International Truck Driving School in Ibadan. Send us a message and our admissions team will get back to you.">
-    <x-site.page-hero eyebrow="Get in touch" title="Talk to admissions" :crumbs="['Contact' => null]"
-        lead="Questions about courses, fees, requirements or the next intake? Send a message and our admissions team will get back to you." />
+<x-site.layout :title="page_text('contact.meta.title')" :description="page_text('contact.meta.description')">
+    <x-site.page-hero :eyebrow="page_text('contact.hero.eyebrow')" :title="page_text('contact.hero.title')" :crumbs="['Contact' => null]"
+        :lead="page_text('contact.hero.lead')" />
 
     <section class="section">
         <div class="container-site grid gap-12 lg:grid-cols-12">
@@ -14,9 +14,9 @@
                     <div class="flex gap-4 rounded-lg border border-ink-100 p-6">
                         <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand-400 text-ink-950"><x-site.icon name="map-pin" class="h-6 w-6" /></span>
                         <div>
-                            <h2 class="text-2xl">Visit our campus</h2>
+                            <h2 class="text-2xl">{{ page_text('contact.visit.title') }}</h2>
                             <p class="mt-1 text-ink-600">{{ $settings->headquarters }}</p>
-                            <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($settings->headquarters) }}" target="_blank" rel="noopener" class="link-underline mt-3 inline-block text-sm">Get directions</a>
+                            <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($settings->headquarters) }}" target="_blank" rel="noopener" class="link-underline mt-3 inline-block text-sm">{{ page_text('contact.visit.link') }}</a>
                         </div>
                     </div>
                 @endif
@@ -24,7 +24,7 @@
                     <div class="flex gap-4 rounded-lg border border-ink-100 p-6">
                         <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand-400 text-ink-950"><x-site.icon name="phone" class="h-6 w-6" /></span>
                         <div>
-                            <h2 class="text-2xl">Call us</h2>
+                            <h2 class="text-2xl">{{ page_text('contact.call.title') }}</h2>
                             <a href="tel:{{ preg_replace('/[^\d+]/', '', $phone) }}" class="mt-1 block text-ink-600 hover:text-ink-950">{{ $phone }}</a>
                             @if ($settings->secondary_contact)<a href="tel:{{ preg_replace('/[^\d+]/', '', $settings->secondary_contact) }}" class="block text-ink-600 hover:text-ink-950">{{ $settings->secondary_contact }}</a>@endif
                         </div>
@@ -34,7 +34,7 @@
                     <div class="flex gap-4 rounded-lg border border-ink-100 p-6">
                         <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-brand-400 text-ink-950"><x-site.icon name="mail" class="h-6 w-6" /></span>
                         <div class="min-w-0">
-                            <h2 class="text-2xl">Email</h2>
+                            <h2 class="text-2xl">{{ page_text('contact.email.title') }}</h2>
                             <a href="mailto:{{ $settings->business_email }}" class="mt-1 block break-all text-ink-600 hover:text-ink-950">{{ $settings->business_email }}</a>
                             @if ($settings->secondary_email)<a href="mailto:{{ $settings->secondary_email }}" class="block break-all text-ink-600 hover:text-ink-950">{{ $settings->secondary_email }}</a>@endif
                         </div>
@@ -43,8 +43,8 @@
                 @if ($whatsapp)
                     <a href="https://wa.me/{{ $whatsapp }}" target="_blank" rel="noopener" class="flex items-center justify-between gap-4 rounded-lg bg-ink-950 p-6 text-white hover:bg-ink-800">
                         <span>
-                            <span class="block font-display text-2xl font-bold uppercase">Chat on WhatsApp</span>
-                            <span class="text-sm text-ink-300">Fastest way to reach admissions</span>
+                            <span class="block font-display text-2xl font-bold uppercase">{{ page_text('contact.whatsapp.title') }}</span>
+                            <span class="text-sm text-ink-300">{{ page_text('contact.whatsapp.text') }}</span>
                         </span>
                         <x-site.icon name="arrow-up-right" class="h-6 w-6 text-brand-400" />
                     </a>
@@ -54,7 +54,7 @@
             {{-- Form --}}
             <div class="lg:col-span-7">
                 <div class="rounded-lg border-2 border-ink-950 p-6 sm:p-10">
-                    <h2 class="text-4xl">Send a message</h2>
+                    <h2 class="text-4xl">{{ page_text('contact.form.title') }}</h2>
                     <p class="mt-2 text-ink-500">Fields marked <span class="text-red-600">*</span> are required.</p>
 
                     @if ($errors->any())
@@ -101,7 +101,7 @@
                         <div class="flex flex-col gap-4 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
                             <p class="text-xs text-ink-400">We use your details only to answer your enquiry. See our <a href="{{ route('privacy') }}" class="underline">privacy policy</a>.</p>
                             <button class="btn-brand shrink-0" :disabled="sending">
-                                <span x-show="!sending">Send message</span><span x-show="sending" x-cloak>Sending…</span>
+                                <span x-show="!sending">{{ page_text('contact.form.button') }}</span><span x-show="sending" x-cloak>Sending…</span>
                                 <x-site.icon name="send" class="h-5 w-5" />
                             </button>
                         </div>

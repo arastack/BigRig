@@ -24,8 +24,8 @@ class PortalNavigation
         };
 
         $sections[] = ['title' => 'Community', 'items' => [
-            ['label' => 'Messages', 'route' => 'chats', 'icon' => 'message'],
-            ['label' => 'Forum', 'route' => 'forum.list', 'icon' => 'users', 'active' => ['forum.*']],
+            ['label' => 'Messages', 'route' => 'chats', 'icon' => 'message', 'can' => 'read_chats'],
+            ['label' => 'Forum', 'route' => 'forum.list', 'icon' => 'users', 'active' => ['forum.*'], 'can' => 'read_forum'],
         ]];
 
         // Keep only items the user may open, and sections that still have items
@@ -60,6 +60,7 @@ class PortalNavigation
             ['title' => 'Training', 'items' => [
                 ['label' => 'Courses', 'route' => 'course-management', 'icon' => 'book', 'can' => 'read_course_management', 'active' => ['course-management', 'course-details']],
                 ['label' => 'Schedule', 'route' => 'schedule', 'icon' => 'clock', 'can' => 'read_training_schedule'],
+                ['label' => 'Attendance', 'route' => 'admin.attendance', 'icon' => 'clipboard', 'can' => 'read_attendance_reports'],
                 ['label' => 'Change requests', 'route' => 'admin.change-requests.index', 'icon' => 'refresh', 'can' => 'manage_schedule_change_requests', 'badge' => $pendingChanges],
                 ['label' => 'Announcements', 'route' => 'admin.announcements.index', 'icon' => 'megaphone', 'can' => 'manage_announcements', 'active' => ['admin.announcements.*']],
             ]],
@@ -76,8 +77,8 @@ class PortalNavigation
                 ['label' => 'Testimonials', 'route' => 'testimonials', 'icon' => 'star', 'can' => 'read_testimonials'],
             ]],
             ['title' => 'Website', 'items' => [
-                ['label' => 'Courses & fees', 'route' => 'objectives', 'icon' => 'truck', 'can' => 'manage_course_catalogue'],
-                ['label' => 'Pages & content', 'route' => 'admin.content', 'icon' => 'globe', 'can' => 'update_website_management', 'active' => ['admin.content', 'about-company', 'founder', 'sliders', 'custom-services', 'faqs', 'clients', 'achievements']],
+                ['label' => 'Courses & fees', 'route' => 'objectives', 'icon' => 'truck', 'can' => 'manage_course_catalogue', 'active' => ['objectives', 'packages']],
+                ['label' => 'Pages & content', 'route' => 'admin.content', 'icon' => 'globe', 'can' => 'update_website_management', 'active' => ['admin.content', 'admin.page-text', 'about-company', 'founder', 'sliders', 'custom-services', 'faqs', 'clients', 'achievements']],
             ]],
             ['title' => 'System', 'items' => [
                 ['label' => 'Site settings', 'route' => 'site_settings', 'icon' => 'building', 'can' => 'update_site_settings'],

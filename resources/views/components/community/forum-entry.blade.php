@@ -71,6 +71,12 @@
                                 </div>
                             </header>
 
+                            @if ($post->user_id === auth()->id() || auth()->user()?->hasPermission('delete_forum'))
+                                <div class="mb-4 flex justify-end">
+                                    <button type="button" wire:click="deletePost" wire:confirm="Delete this post and all its comments?" class="btn-ghost btn-xs text-red-600"><x-site.icon name="trash" class="h-4 w-4" /> Delete post</button>
+                                </div>
+                            @endif
+
                             <!-- Content -->
                             <div class="space-y-4 mb-6">
                                 {!! nl2br(e($post->body)) !!}
@@ -92,7 +98,7 @@
             </div>
 
             <!-- Right content -->
-            <x-community.forum-right-content :meetups="$meetups" :popularPosts="$popularPosts" />
+            <x-community.forum-right-content :popularPosts="$popularPosts" />
 
         </div>
 

@@ -62,75 +62,46 @@ class RolesAndPermissionsSeeder extends Seeder
         ]);
 
 
-        $permissions = [
-            'read_calendar',
-            'read_chats',
-            'read_course_management',
-            'update_course_management',
-            'create_forum',
-            'delete_forum',
-            'read_forum',
-            'update_forum',
-            'create_instructors',
-            'delete_instructors',
-            'read_instructors',
-            'update_instructors',
-            'read_dashboard_instructor_card',
-            'read_dashboard_revenue_card',
-            'read_dashboard_user_card',
-            'read_management_navigation',
-            'create_newsletter',
-            'read_newsletter',
-            'update_email_configuration',
-            'update_payment_configuration',
-            'create_payments',
-            'read_payments',
-            'read_roles_and_permissions',
-            'create_roles_and_permissions',
-            'delete_roles_and_permissions',
-            'update_roles_and_permissions',
-            'update_role_course_permission',
-            'read_student_accounts',
-            'create_testimonials',
-            'delete_testimonials',
-            'read_testimonials',
-            'update_testimonials',
-            'read_training_schedule',
-            'create_training_schedule',
-            'delete_training_schedule',
-            'update_suspend_user_account',
-            'read_suspend_user_account',
-            'update_verify_user_account',
-            'update_website_management',
-        ];
+        // Portal each role signs in to
+        foreach ([$superRole, $itRole, $adminRole] as $role) {
+            $role->update(['portal' => Role::PORTAL_ADMIN]);
+        }
+        foreach ([$leadRole, $mvRole, $cmvRole, $forkliftRole, $defRole, $safetyRole] as $role) {
+            $role->update(['portal' => Role::PORTAL_INSTRUCTOR]);
+        }
+        $studentRole->update(['portal' => Role::PORTAL_STUDENT]);
 
-        foreach ($permissions as $permission) {
-            $perm = Permission::create(['name' => $permission]);
-            $superRole->permissions()->attach($perm); // Assign all permissions to SuperAdmin
-            $itRole->permissions()->attach($perm); // Assign all permissions to SuperAdmin
+        // Every permission in the catalogue (config/permissions.php)
+        $catalogue = collect(config('permissions.groups'))->flatMap(fn ($group) => array_keys($group));
+        $permissions = $catalogue->mapWithKeys(fn ($name) => [$name => Permission::firstOrCreate(['name' => $name])->id]);
+
+        // SuperAdmin passes every check anyway; IT Consultant gets everything explicitly
+        $superRole->permissions()->sync($permissions->values());
+        $itRole->permissions()->sync($permissions->values());
+
+        // Everyone starts with chat and forum access
+        $everyone = $permissions->only(config('permissions.everyone'))->values();
+        foreach (Role::all() as $role) {
+            $role->permissions()->syncWithoutDetaching($everyone);
         }
 
-        // Assign limited permissions to Student
-        $studentPermissions = [
-            'read_instructors',
-            'read_management_navigation',
-            'read_training_schedule',
-            'read_payments',
-            'read_dashboard_user_card',
-            'read_dashboard_instructor_card',
-            'read_chats',
-            'read_calendar'
-        ];
-
-        foreach ($studentPermissions as $permissionName) {
-            $permission = Permission::where('name', $permissionName)->first();
-            if ($permission) {
-                $studentRole->permissions()->attach($permission);
+        // Sensible starting points for management roles
+        foreach (config('permissions.defaults') as $roleName => $rules) {
+            $role = Role::where('role_name', $roleName)->first();
+            if (! $role) {
+                continue;
             }
-        }
 
-        // Assign 'view' permission to User
-        // $userRole->permissions()->attach(Permission::where('name', 'view')->first());
+            $names = in_array('*', $rules) ? $catalogue->all() : [];
+            foreach ($rules as $rule) {
+                if (str_starts_with($rule, '!')) {
+                    $names = array_diff($names, [substr($rule, 1)]);
+                } elseif ($rule !== '*') {
+                    $names[] = $rule;
+                }
+            }
+
+            $role->permissions()->syncWithoutDetaching($permissions->only($names)->values());
+        }
     }
 }
-

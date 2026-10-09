@@ -52,14 +52,14 @@
                         <!-- Form fields -->
                         <input type="hidden" x-model="$store.editModal.data.id" name="id">
                         <div>
-                            <label class="block text-sm font-medium mb-1" for="image_url">Landing Page 1 - Slider Picture <span class="text-yellow-500 text-xs">1029 x 631 px</span></label>
-                            <input id="image_url" class="form-input w-full px-2 py-1" type="file" name="image_url" />
-                            <span class="text-xs">.jpg and .png extensions only.</span>
+                            <label class="block text-sm font-medium mb-1" for="edit_image_url">Landing Page 1 - Slider Picture <span class="text-yellow-500 text-xs">1029 x 631 px</span></label>
+                            <input id="edit_image_url" class="form-input w-full px-2 py-1" type="file" name="image_url" accept=".jpg,.jpeg,.png" />
+                            <span class="text-xs">.jpg and .png extensions only. Leave empty to keep the current picture.</span>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-1" for="image_url">Landing Page 2 - Slider Picture <span class="text-yellow-500 text-xs">785 x 670 px</span></label>
-                            <input id="image_url" class="form-input w-full px-2 py-1" type="file" name="image_url_2" />
-                            <span class="text-xs">.jpg and .png extensions only.</span>
+                            <label class="block text-sm font-medium mb-1" for="edit_image_url_2">Landing Page 2 - Slider Picture <span class="text-yellow-500 text-xs">785 x 670 px</span></label>
+                            <input id="edit_image_url_2" class="form-input w-full px-2 py-1" type="file" name="image_url_2" accept=".jpg,.jpeg,.png" />
+                            <span class="text-xs">.jpg and .png extensions only. Leave empty to keep the current picture.</span>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1" for="slider_title">Slider Title <span class="text-red-500">*</span></label>

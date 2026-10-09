@@ -48,6 +48,7 @@ class RoleController extends Controller
         }
 
         $role = Role::create($data);
+        $role->permissions()->syncWithoutDetaching(\App\Models\Permission::whereIn('name', config('permissions.everyone', []))->pluck('id'));
 
         return redirect()->route('user-permissions', $role)->with('success', "{$role->role_name} role created. Now choose what it can do.");
     }

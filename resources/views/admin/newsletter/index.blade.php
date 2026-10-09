@@ -2,10 +2,27 @@
 <x-app-layout>
     <x-portal.page title="Newsletter" subtitle="Email addresses of people who signed up for news and updates on the website.">
         <x-slot:actions>
+            @can('create_newsletter')
+                <button type="button" class="btn-dark btn-sm" x-data @click="$dispatch('open-modal', 'add-subscribers')"><x-site.icon name="plus" class="h-4 w-4" /> Add subscribers</button>
+            @endcan
             @if ($total)
                 <a href="{{ route('admin.newsletter.export', request()->query()) }}" class="btn-ghost btn-sm"><x-site.icon name="download" class="h-4 w-4" /> Export CSV</a>
             @endif
         </x-slot:actions>
+
+        @can('create_newsletter')
+            <x-portal.modal name="add-subscribers" title="Add subscribers">
+                <form method="POST" action="{{ route('admin.newsletter.store') }}" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label for="emails" class="portal-label">Email addresses</label>
+                        <textarea id="emails" name="emails" rows="6" required class="portal-input" placeholder="one@example.com&#10;two@example.com"></textarea>
+                        <p class="mt-1 text-xs text-ink-500">One per line, or separated by commas. Only add people who agreed to receive news from the school.</p>
+                    </div>
+                    <div class="flex justify-end"><button class="btn-brand btn-sm">Add</button></div>
+                </form>
+            </x-portal.modal>
+        @endcan
 
         <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <x-portal.stat label="Subscribers" :value="number_format($total)" icon="mail" />

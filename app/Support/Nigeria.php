@@ -10,7 +10,4 @@ class Nigeria
         'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
         'Sokoto', 'Taraba', 'Yobe', 'Zamfara',
     ];
-
-    /** VAT added to tuition at checkout */
-    public const VAT_RATE = 0.075;
 }

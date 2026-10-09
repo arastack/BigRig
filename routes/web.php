@@ -40,7 +40,10 @@ use App\Http\Controllers\Admin\{
     ChangeRequestController,
     EnquiryController,
     NewsletterController,
-    ContentController
+    ContentController,
+    PageTextController,
+    PackageController,
+    AttendanceReportController
 };
 use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
 
@@ -122,7 +125,7 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
     |--------------------------------------------------------------------------
     */
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/chats', [ChatController::class, 'chatIndex'])->name('chats');
+    Route::get('/chats', [ChatController::class, 'chatIndex'])->name('chats')->middleware('permission:read_chats');
     Route::get('/user-profile', [UserController::class, 'userProfile'])->name('user-profile');
 
     /*
@@ -317,11 +320,30 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
         Route::controller(NewsletterController::class)->prefix('newsletter')->group(function () {
             Route::get('/', 'index')->name('newsletter')->middleware('permission:read_newsletter');
             Route::get('/export', 'export')->name('admin.newsletter.export')->middleware('permission:read_newsletter');
+            Route::post('/', 'store')->name('admin.newsletter.store')->middleware('permission:create_newsletter');
             Route::delete('/{subscriber}', 'destroy')->name('admin.newsletter.destroy')->middleware('permission:delete_newsletter');
         });
 
         // Website content hub
         Route::get('/content', [ContentController::class, 'index'])->name('admin.content')->middleware('permission:update_website_management');
+
+        // Editable page text (headings, intros, steps, legal pages)
+        Route::controller(PageTextController::class)->prefix('page-text')->middleware('permission:update_website_management')->group(function () {
+            Route::get('/', 'index')->name('admin.page-text');
+            Route::put('/', 'update')->name('admin.page-text.update');
+        });
+
+        // Course packages (combo discounts) and VAT
+        Route::controller(PackageController::class)->prefix('packages')->middleware('permission:manage_course_catalogue')->group(function () {
+            Route::get('/', 'index')->name('packages');
+            Route::post('/', 'store')->name('package.store');
+            Route::put('/vat', 'updateVat')->name('packages.vat');
+            Route::put('/{package}', 'update')->name('package.update');
+            Route::delete('/{package}', 'destroy')->name('package.destroy');
+        });
+
+        // Attendance across the school
+        Route::get('/attendance', [AttendanceReportController::class, 'index'])->name('admin.attendance')->middleware('permission:read_attendance_reports');
 
         // Testimonials Management
         Route::controller(TestimonialsController::class)->prefix('testimonials')->group(function () {
@@ -349,6 +371,7 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
             Route::post('/material/store', 'uploadCourseMaterials')->name('upload-course-materials');
             Route::delete('/material/destroy/{id}', 'materialDestroy')->name('material.delete');
             Route::post('/curriculum/store', 'curriculumStore')->name('curriculum.store');
+            Route::put('/curriculum/update/{id}', 'curriculumUpdate')->name('curriculum.update');
             Route::delete('/curriculum/destroy/{id}', 'curriculumDestroy')->name('curriculum.destroy');
         });
     });
@@ -362,6 +385,8 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
         Route::get('/', 'index')->name('schedule')->middleware('permission:read_training_schedule');
         Route::post('/create', 'create')->name('schedule.create')->middleware('permission:create_training_schedule');
         Route::delete('/{id}', 'destroy')->name('schedule.destroy')->middleware('permission:delete_training_schedule');
+        Route::get('/{id}/edit', 'edit')->name('schedule.edit')->middleware('permission:update_training_schedule');
+        Route::put('/{id}', 'update')->name('schedule.update')->middleware('permission:update_training_schedule');
 
         Route::middleware('permission:create_training_schedule|update_training_schedule')->group(function () {
             Route::get('/topics/{id}', 'getTopics');
@@ -422,6 +447,7 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
             Route::prefix('clients')->group(function () {
                 Route::get('/', 'clientsIndex')->name('clients');
                 Route::post('/store', 'clientsStore')->name('client.store');
+                Route::put('/update', 'clientsUpdate')->name('client.update');
                 Route::delete('/destroy/{id}', 'clientsDestroy')->name('client.destroy');
             });
 
@@ -452,9 +478,9 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
     | Forum Routes
     |--------------------------------------------------------------------------
     */
-    Route::prefix('forum')->group(function () {
+    Route::prefix('forum')->middleware('permission:read_forum')->group(function () {
         Route::get('/{category?}', ForumList::class)->name('forum.list');
-        Route::get('/create/post', ForumCreatePost::class)->name('forum.create');
+        Route::get('/create/post', ForumCreatePost::class)->name('forum.create')->middleware('permission:create_forum');
         Route::get('/single/{postId}', ForumPostPage::class)->name('forum.post');
     });
 });

@@ -29,7 +29,7 @@ return [
             'read_applicants' => 'View applicants and their applications',
             'update_applicants' => 'Manage applications (courses, batch, record offline payment)',
             'read_student_accounts' => 'View enrolled students',
-            'read_suspend_user_account' => 'View suspended accounts',
+            'read_suspend_user_account' => 'See suspended accounts in lists',
             'update_suspend_user_account' => 'Suspend and reactivate accounts',
             'update_verify_user_account' => 'Verify account email addresses',
             'export_students' => 'Export applicant and student lists',
@@ -44,7 +44,6 @@ return [
             'read_instructors' => 'View staff and instructors',
             'create_instructors' => 'Add staff accounts',
             'update_instructors' => 'Edit staff accounts and their roles',
-            'delete_instructors' => 'Remove staff accounts',
         ],
 
         'Roles & Permissions' => [
@@ -67,7 +66,7 @@ return [
             'update_training_schedule' => 'Edit training sessions',
             'delete_training_schedule' => 'Delete training sessions',
             'manage_schedule_change_requests' => 'Approve or reject schedule change requests',
-            'read_attendance_reports' => 'View attendance and progress reports',
+            'read_attendance_reports' => 'View school-wide attendance reports',
         ],
 
         'Finance' => [
@@ -79,7 +78,7 @@ return [
         'Communication' => [
             'manage_announcements' => 'Publish school-wide announcements',
             'read_newsletter' => 'View newsletter subscribers',
-            'create_newsletter' => 'Add newsletter subscribers',
+            'create_newsletter' => 'Add newsletter subscribers manually',
             'delete_newsletter' => 'Remove newsletter subscribers',
             'read_contact_messages' => 'Read contact form enquiries',
         ],
@@ -99,16 +98,10 @@ return [
         ],
 
         'Community' => [
-            'read_chats' => 'Use chats',
-            'read_calendar' => 'View the calendar',
+            'read_chats' => 'Use messages (chat)',
             'read_forum' => 'Read the forum',
-            'create_forum' => 'Post in the forum',
-            'update_forum' => 'Moderate forum posts',
-            'delete_forum' => 'Delete forum posts',
-        ],
-
-        'Legacy' => [
-            'read_management_navigation' => 'Show management navigation (legacy)',
+            'create_forum' => 'Post and comment in the forum',
+            'delete_forum' => 'Moderate the forum (delete anyone\'s posts and comments)',
         ],
     ],
 
@@ -116,6 +109,11 @@ return [
     | Defaults applied once by migration to roles that had no permissions.
     | Roles that already have permissions are never changed automatically.
     */
+    /*
+    | Permissions every role starts with (applied by migration to existing roles).
+    */
+    'everyone' => ['read_chats', 'read_forum', 'create_forum'],
+
     'defaults' => [
         'Admin' => ['*', '!create_roles_and_permissions', '!update_roles_and_permissions', '!delete_roles_and_permissions', '!update_email_configuration', '!update_payment_configuration'],
         'Lead Instructor' => [

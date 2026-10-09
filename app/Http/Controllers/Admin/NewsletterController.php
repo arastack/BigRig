@@ -41,6 +41,23 @@ class NewsletterController extends Controller
         }, 'bigrig-newsletter-subscribers-' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
     }
 
+    /**
+     * Add one or more addresses (one per line or comma-separated), e.g. from a sign-up sheet.
+     */
+    public function store(Request $request)
+    {
+        $data = $request->validate(['emails' => ['required', 'string', 'max:20000']]);
+
+        $emails = collect(preg_split('/[\s,;]+/', strtolower($data['emails'])))->filter()->unique();
+        $valid = $emails->filter(fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL));
+        $added = $valid->filter(fn ($email) => EmailSubscription::firstOrCreate(['email' => $email])->wasRecentlyCreated)->count();
+        $invalid = $emails->diff($valid);
+
+        return back()->with($invalid->isEmpty() ? 'success' : 'warning',
+            "{$added} subscriber(s) added" . ($valid->count() > $added ? ', ' . ($valid->count() - $added) . ' already subscribed' : '')
+            . ($invalid->isNotEmpty() ? '. Skipped invalid: ' . $invalid->take(5)->join(', ') : '.'));
+    }
+
     public function destroy(EmailSubscription $subscriber)
     {
         $subscriber->delete();

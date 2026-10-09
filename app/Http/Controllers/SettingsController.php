@@ -430,16 +430,17 @@ class SettingsController extends Controller
         return redirect()->back()->with('success', 'Slider created successfully.');
     }
 
-    public function sliderUpdate(Request $request, Slider $slider)
+    public function sliderUpdate(Request $request)
     {
         $request->validate([
             'id' => 'required|exists:sliders,id',
             'slider_title' => 'required|string|max:255',
             'slider_text' => 'required|string|max:255',
             'button_name' => 'nullable|string|max:20',
-            'button_url' => 'nullable|string|max:2048', // Ensure valid URL format
-            'image_url' => 'required|image|mimes:jpg,png,jpeg|max:2048', // Ensure image is uploaded
-            'image_url_2' => 'required|image|mimes:jpg,png,jpeg|max:2048', // Ensure image is uploaded
+            'button_url' => 'nullable|string|max:2048',
+            // Images are optional on update: the current image is kept when none is uploaded
+            'image_url' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'image_url_2' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
         ],
         [
             'image_url.image' => 'Slider Picture: The uploaded file must be an image.',
@@ -452,33 +453,27 @@ class SettingsController extends Controller
 
         $slider = Slider::findOrFail($request->input('id'));
 
-        // Update fields
         $slider->title = $request->input('slider_title');
         $slider->text = $request->input('slider_text');
         $slider->button_name = $request->input('button_name');
         $slider->button_url = $request->input('button_url');
 
-        // Handle image upload
-        if ($request->hasFile('image_url')) {
-            $oldImagePath = $slider->image_url;
-            $filePath = $request->file('image_url')->store('sliders', 'public');
-
-            $oldImagePath_2 = $slider->image_url_2;
-            $filePath_2 = $request->file('image_url_2')->store('sliders', 'public');
-
-            $slider->image_url = $filePath;
-            $slider->image_url_2 = $filePath_2;
-
-            if ($oldImagePath && Storage::disk('public')->exists($oldImagePath)) {
-                Storage::disk('public')->delete($oldImagePath);
-            }
-
-            if ($oldImagePath_2 && Storage::disk('public')->exists($oldImagePath_2)) {
-                Storage::disk('public')->delete($oldImagePath_2);
+        // Replace each image independently, deleting the old file once the new one is stored
+        $replaced = [];
+        foreach (['image_url', 'image_url_2'] as $field) {
+            if ($request->hasFile($field)) {
+                $replaced[] = $slider->{$field};
+                $slider->{$field} = $request->file($field)->store('sliders', 'public');
             }
         }
 
         $slider->save();
+
+        foreach (array_filter($replaced) as $oldPath) {
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        }
 
         return redirect()->back()->with('success', 'Slider updated successfully!');
     }
@@ -686,6 +681,39 @@ class SettingsController extends Controller
 
 
         return redirect()->back()->with('success', 'Custom service created successfully.');
+    }
+
+    public function clientsUpdate(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:clients,id',
+            'client_name' => 'required|string|max:255',
+            'type' => 'required|string|in:client,partner',
+            'client_logo' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+        ]);
+
+        $client = Clients::findOrFail($request->input('id'));
+
+        // Clients are shown by logo, so one must exist (current or newly uploaded)
+        if ($request->input('type') === 'client' && ! $client->logo && ! $request->hasFile('client_logo')) {
+            return redirect()->back()->withErrors(['client_logo' => 'Upload a logo to list this organisation as a client.'])->withInput();
+        }
+
+        $oldLogo = null;
+        if ($request->hasFile('client_logo')) {
+            $oldLogo = $client->logo;
+            $client->logo = $request->file('client_logo')->store('clients', 'public');
+        }
+
+        $client->name = $request->input('client_name');
+        $client->type = $request->input('type');
+        $client->save();
+
+        if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
+            Storage::disk('public')->delete($oldLogo);
+        }
+
+        return redirect()->back()->with('success', ucfirst($client->type) . ' updated.');
     }
 
     public function clientsDestroy($id)

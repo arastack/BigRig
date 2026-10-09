@@ -50,7 +50,8 @@ class AdmissionController extends Controller
             'students' => $students,
             'status' => $status,
             'counts' => $counts,
-            'statuses' => collect(self::STATUSES)->filter(fn ($label, $key) => $key !== 'awaiting_payment' || $user->hasPermission('read_applicants')),
+            'statuses' => collect(self::STATUSES)->filter(fn ($label, $key) => ($key !== 'awaiting_payment' || $user->hasPermission('read_applicants'))
+                && ($key !== 'suspended' || $user->hasPermission('read_suspend_user_account'))),
             'courses' => TrainingObjective::orderBy('objective')->get(),
             'batches' => EnrolmentBatch::orderByDesc('id')->get(),
             'filters' => $request->only(['q', 'course', 'batch']),
@@ -209,6 +210,11 @@ class AdmissionController extends Controller
     {
         $query = User::query()->whereHas('roles', fn ($q) => $q->where('roles.id', Role::STUDENT_ROLE_ID));
 
+        // Suspended accounts are only listed for staff allowed to see them
+        if (! $request->user()->hasPermission('read_suspend_user_account')) {
+            $query->whereNull('suspended_at');
+        }
+
         match ($status) {
             'awaiting_payment' => $query->whereNull('suspended_at')->whereDoesntHave('subscriptions', fn ($q) => $q->where('payment_status', 'completed')),
             'enrolled' => $query->whereNull('suspended_at')->whereHas('subscriptions', fn ($q) => $q->where('payment_status', 'completed')),
@@ -258,6 +264,10 @@ class AdmissionController extends Controller
         // Staff who can only see enrolled students never land on the applicants tab
         if ($status === 'awaiting_payment' && ! $request->user()->hasPermission('read_applicants')) {
             return 'enrolled';
+        }
+
+        if ($status === 'suspended' && ! $request->user()->hasPermission('read_suspend_user_account')) {
+            return 'all';
         }
 
         return $status;

@@ -158,9 +158,11 @@
                 <div>
                     <h2 class="text-xl leading-snug text-gray-800 dark:text-gray-100 font-bold mb-6">Course Curriculum</h2>
                     <div class="space-y-2 mt-6">
+                        @php $canEditCurriculum = Auth::user()->hasPermission('update_course_management'); @endphp
                         @foreach ($curriculum as $curricula)
-                            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl px-5 py-4">
-                                <div class="md:flex justify-between items-center space-y-4 md:space-y-0 space-x-2">
+                            @php $editingThis = $errors->any() && (string) old('curriculum_id') === (string) $curricula->id; @endphp
+                            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl px-5 py-4" x-data="{ editing: @js($editingThis) }">
+                                <div class="md:flex justify-between items-center space-y-4 md:space-y-0 space-x-2" x-show="!editing">
                                     <!-- Left side -->
                                     <div class="flex items-start space-x-3 md:space-x-4">
                                         <div class="w-9 h-9 shrink-0 mt-1">
@@ -172,16 +174,39 @@
                                         </div>
                                     </div>
                                     <!-- Right side -->
-                                    <div class="flex items-center space-x-4 pl-10 md:pl-0">
-                                        <button type="button" class="text-red-500 hover:text-red-600 rounded-full" @click="$store.deleteModal.open({{ $curricula->id }})" aria-controls="delete-modal">
-                                            <span class="sr-only">Delete</span>
-                                            <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
-                                                <path d="M13 15h2v6h-2zM17 15h2v6h-2z" />
-                                                <path d="M20 9c0-.6-.4-1-1-1h-6c-.6 0-1 .4-1 1v2H8v2h1v10c0 .6.4 1 1 1h12c.6 0 1-.4 1-1V13h1v-2h-4V9zm-6 1h4v1h-4v-1zm7 3v9H11v-9h10z" />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                    @if ($canEditCurriculum)
+                                        <div class="flex items-center space-x-4 pl-10 md:pl-0">
+                                            <button type="button" class="text-ink-500 hover:text-ink-950 rounded-full p-1.5" @click="editing = true" aria-label="Edit {{ $curricula->topic }}">
+                                                <x-site.icon name="pencil" class="h-5 w-5" />
+                                            </button>
+                                            <button type="button" class="text-red-500 hover:text-red-600 rounded-full" @click="$store.deleteModal.open({{ $curricula->id }})" aria-controls="delete-modal">
+                                                <span class="sr-only">Delete</span>
+                                                <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
+                                                    <path d="M13 15h2v6h-2zM17 15h2v6h-2z" />
+                                                    <path d="M20 9c0-.6-.4-1-1-1h-6c-.6 0-1 .4-1 1v2H8v2h1v10c0 .6.4 1 1 1h12c.6 0 1-.4 1-1V13h1v-2h-4V9zm-6 1h4v1h-4v-1zm7 3v9H11v-9h10z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    @endif
                                 </div>
+                                @if ($canEditCurriculum)
+                                    <form x-show="editing" x-cloak method="POST" action="{{ route('curriculum.update', $curricula->id) }}" class="space-y-3">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="curriculum_id" value="{{ $curricula->id }}">
+                                        <div>
+                                            <label class="portal-label" for="curriculum_topic_{{ $curricula->id }}">Topic</label>
+                                            <input id="curriculum_topic_{{ $curricula->id }}" name="topic" value="{{ $editingThis ? old('topic') : $curricula->topic }}" required maxlength="255" class="portal-input">
+                                        </div>
+                                        <div>
+                                            <label class="portal-label" for="curriculum_summary_{{ $curricula->id }}">Summary</label>
+                                            <textarea id="curriculum_summary_{{ $curricula->id }}" name="summary" rows="3" required class="portal-input">{{ $editingThis ? old('summary') : $curricula->summary }}</textarea>
+                                        </div>
+                                        <div class="flex justify-end gap-2">
+                                            <button type="button" class="btn-ghost btn-sm" @click="editing = false">Cancel</button>
+                                            <button class="btn-dark btn-sm">Save topic</button>
+                                        </div>
+                                    </form>
+                                @endif
                             </div>
                         @endforeach
                     </div>

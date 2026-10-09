@@ -42,6 +42,11 @@ class StaffController extends Controller
             $query->whereHas('roles', fn ($q) => $q->where('roles.id', $role));
         }
 
+        // Suspended accounts are only listed for staff allowed to see them
+        if (! $request->user()->hasPermission('read_suspend_user_account')) {
+            $query->whereNull('suspended_at');
+        }
+
         match ($request->input('status')) {
             'active' => $query->whereNull('suspended_at'),
             'suspended' => $query->whereNotNull('suspended_at'),

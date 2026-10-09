@@ -46,12 +46,12 @@
                     <img src="{{ img($hero, 1000) }}" alt="" class="absolute right-0 top-1/2 w-[85%] -translate-y-[60%] object-contain drop-shadow-[0_30px_40px_rgba(0,0,0,0.5)]">
                 @endif
                 <div class="relative z-10 p-12">
-                    <p class="eyebrow">Professional driver training</p>
-                    <p class="mt-4 max-w-md font-display text-5xl font-bold uppercase leading-[0.95] text-white">Your licence. Your career. Your road.</p>
+                    <p class="eyebrow">{{ page_text('auth.eyebrow') }}</p>
+                    <p class="mt-4 max-w-md font-display text-5xl font-bold uppercase leading-[0.95] text-white">{{ page_text('auth.title') }}</p>
                     <ul class="mt-8 space-y-3 text-ink-200">
-                        <li class="flex items-center gap-3"><x-site.icon name="check-circle" class="h-5 w-5 text-brand-400" />Track your application and payment</li>
-                        <li class="flex items-center gap-3"><x-site.icon name="check-circle" class="h-5 w-5 text-brand-400" />See your instructor and timetable</li>
-                        <li class="flex items-center gap-3"><x-site.icon name="check-circle" class="h-5 w-5 text-brand-400" />Download course materials any time</li>
+                        <li class="flex items-center gap-3"><x-site.icon name="check-circle" class="h-5 w-5 text-brand-400" />{{ page_text('auth.points.1') }}</li>
+                        <li class="flex items-center gap-3"><x-site.icon name="check-circle" class="h-5 w-5 text-brand-400" />{{ page_text('auth.points.2') }}</li>
+                        <li class="flex items-center gap-3"><x-site.icon name="check-circle" class="h-5 w-5 text-brand-400" />{{ page_text('auth.points.3') }}</li>
                     </ul>
                 </div>
                 <div class="lane relative z-10 mb-10"></div>

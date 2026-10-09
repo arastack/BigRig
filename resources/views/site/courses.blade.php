@@ -1,8 +1,8 @@
-<x-site.layout title="Courses & Fees" description="Truck (CDL), forklift, school bus/BRT and professional car driving courses in Ibadan. Compare durations, sessions and tuition, then apply online.">
+<x-site.layout :title="page_text('courses.meta.title')" :description="page_text('courses.meta.description')">
     @php $currency = $settings->base_currency ?? '₦'; @endphp
 
-    <x-site.page-hero eyebrow="Licence programmes" title="Courses & fees" :crumbs="['Courses' => null]"
-        lead="Every programme combines classroom theory, supervised practical sessions and a final examination, taught by an instructor assigned to you." />
+    <x-site.page-hero :eyebrow="page_text('courses.hero.eyebrow')" :title="page_text('courses.hero.title')" :crumbs="['Courses' => null]"
+        :lead="page_text('courses.hero.lead')" />
 
     <section class="section bg-ink-50">
         <div class="container-site">
@@ -18,9 +18,9 @@
     <section class="section">
         <div class="container-site">
             <div class="max-w-2xl">
-                <p class="eyebrow">Side by side</p>
-                <h2 class="section-title">Compare programmes</h2>
-                <p class="lead mt-4">Tuition shown excludes 7.5% VAT, which is added at checkout. You can enrol in more than one programme on the same application.</p>
+                <p class="eyebrow">{{ page_text('courses.compare.eyebrow') }}</p>
+                <h2 class="section-title">{{ page_text('courses.compare.title') }}</h2>
+                <p class="lead mt-4">{{ page_text('courses.compare.lead', [':vat' => \App\Support\Pricing::vatLabel()]) }}</p>
             </div>
 
             <div class="mt-10 overflow-x-auto rounded-lg border border-ink-100">
@@ -52,13 +52,13 @@
                 </table>
             </div>
 
-            @foreach (config('admissions.combos', []) as $combo)
+            @foreach (\App\Support\Pricing::packages() as $combo)
                 <div class="mt-6 flex flex-col gap-4 rounded-lg bg-brand-400 p-6 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p class="font-display text-3xl font-bold uppercase text-ink-950">{{ $combo['name'] }} — save {{ $currency }}{{ number_format($combo['discount']) }}</p>
-                        <p class="mt-1 text-ink-800">{{ $combo['description'] }} Complete both in about {{ $combo['weeks'] }} weeks.</p>
+                        <p class="mt-1 text-ink-800">{{ $combo['description'] }}@if ($combo['weeks']) Complete both in about {{ $combo['weeks'] }} weeks.@endif</p>
                     </div>
-                    <a href="{{ route('register') }}" class="btn-dark shrink-0">Apply for the combo</a>
+                    <a href="{{ route('register') }}" class="btn-dark shrink-0">{{ page_text('courses.combo.button') }}</a>
                 </div>
             @endforeach
         </div>
@@ -68,9 +68,9 @@
         <section class="section bg-ink-50">
             <div class="container-site">
                 <div class="max-w-2xl">
-                    <p class="eyebrow">Also available</p>
-                    <h2 class="section-title">Specialist training & support</h2>
-                    <p class="lead mt-4">Ask admissions about these programmes and services — several are arranged on request for individuals and companies.</p>
+                    <p class="eyebrow">{{ page_text('courses.services.eyebrow') }}</p>
+                    <h2 class="section-title">{{ page_text('courses.services.title') }}</h2>
+                    <p class="lead mt-4">{{ page_text('courses.services.lead') }}</p>
                 </div>
                 <ul class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($services as $service)

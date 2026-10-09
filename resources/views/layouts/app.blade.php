@@ -3,7 +3,8 @@
     $navigation = \App\Support\PortalNavigation::for($user);
     $portalName = ['admin' => 'Administration', 'instructor' => 'Instructor portal', 'student' => 'Student portal'][$user->portal()] ?? 'Portal';
     $roleName = $user->roles->first()?->role_name;
-    $pageTitle = trim($__env->yieldContent('title')) ?: ($attributes['title'] ?? $portalName);
+    // Sections are already escaped by Blade; decode so {{ }} doesn't escape them twice
+    $pageTitle = html_entity_decode(trim($__env->yieldContent('title')), ENT_QUOTES) ?: ($attributes['title'] ?? $portalName);
 
     $isActive = function (array $item) {
         $patterns = $item['active'] ?? [$item['route']];

@@ -1,7 +1,7 @@
 @php
     $currency = $settings->base_currency ?? '₦';
     $requirements = $course->requirementList();
-    $vat = round($course->price * 0.075, 2);
+    $vat = round($course->price * \App\Support\Pricing::vatRate(), 2);
     $schema = [
         '@context' => 'https://schema.org',
         '@type' => 'Course',
@@ -14,11 +14,11 @@
 @endphp
 <x-site.layout :title="$course->objective" :description="\Illuminate\Support\Str::limit(strip_tags($course->course_details), 160)" :image="img($course->image_url, 1200)" :schema="$schema">
 
-    <x-site.page-hero eyebrow="{{ $course->duration }}-week programme" :title="$course->objective" :image="img($course->image_url, 1600)"
+    <x-site.page-hero :eyebrow="page_text('course.hero.eyebrow', [':weeks' => $course->duration])" :title="$course->objective" :image="img($course->image_url, 1600)"
         :crumbs="['Courses' => route('courses'), $course->objective => null]">
         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a href="{{ route('register', ['course' => $course->id]) }}" class="btn-brand">Apply for this course <x-site.icon name="arrow-right" class="h-5 w-5" /></a>
-            <a href="{{ route('contact') }}" class="btn-outline-light">Ask a question</a>
+            <a href="{{ route('register', ['course' => $course->id]) }}" class="btn-brand">{{ page_text('course.hero.button_primary') }} <x-site.icon name="arrow-right" class="h-5 w-5" /></a>
+            <a href="{{ route('contact') }}" class="btn-outline-light">{{ page_text('course.hero.button_secondary') }}</a>
         </div>
     </x-site.page-hero>
 
@@ -30,7 +30,7 @@
 
                 @if ($course->youtubeId())
                     <div class="mt-12">
-                        <h2 class="text-3xl">See the training</h2>
+                        <h2 class="text-3xl">{{ page_text('course.video.title') }}</h2>
                         <div class="mt-5 aspect-video overflow-hidden rounded-lg bg-ink-950" x-data="{ play: false }">
                             <template x-if="play">
                                 <iframe class="h-full w-full" src="https://www.youtube-nocookie.com/embed/{{ $course->youtubeId() }}?autoplay=1&rel=0" title="{{ $course->objective }} video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
@@ -45,8 +45,8 @@
 
                 @if ($course->curriculum->isNotEmpty())
                     <div class="mt-14">
-                        <p class="eyebrow">Curriculum</p>
-                        <h2 class="mt-3 text-4xl">What you will learn</h2>
+                        <p class="eyebrow">{{ page_text('course.curriculum.eyebrow') }}</p>
+                        <h2 class="mt-3 text-4xl">{{ page_text('course.curriculum.title') }}</h2>
                         <ol class="mt-8 space-y-3">
                             @foreach ($course->curriculum as $n => $topic)
                                 <li class="flex gap-5 rounded-lg border border-ink-100 p-5">
@@ -67,9 +67,9 @@
                 <div class="sticky top-28 space-y-6">
                     <div class="overflow-hidden rounded-lg border-2 border-ink-950">
                         <div class="bg-ink-950 p-6 text-white">
-                            <p class="text-sm font-semibold uppercase tracking-wider text-ink-300">Tuition</p>
+                            <p class="text-sm font-semibold uppercase tracking-wider text-ink-300">{{ page_text('course.sidebar.tuition') }}</p>
                             <p class="font-display text-5xl font-extrabold text-brand-400">{{ $currency }}{{ number_format($course->price) }}</p>
-                            <p class="mt-1 text-sm text-ink-300">+ {{ $currency }}{{ number_format($vat, 2) }} VAT (7.5%)</p>
+                            <p class="mt-1 text-sm text-ink-300">+ {{ $currency }}{{ number_format($vat, 2) }} VAT ({{ \App\Support\Pricing::vatLabel() }}%)</p>
                         </div>
                         <dl class="divide-y divide-ink-100">
                             @foreach ([
@@ -77,7 +77,7 @@
                                 ['book', 'Theory sessions', $course->theory_session ?: '—'],
                                 ['steering', 'Practical sessions', $course->practical_session ?: '—'],
                                 ['clipboard', 'Examination', $course->examination ?: 'Included'],
-                                ['award', 'Certificate', 'On successful completion'],
+                                ['award', 'Certificate', page_text('course.sidebar.certificate')],
                             ] as [$icon, $label, $value])
                                 <div class="flex items-center justify-between gap-4 px-6 py-3.5">
                                     <dt class="flex items-center gap-3 text-ink-500"><x-site.icon :name="$icon" class="h-5 w-5 text-ink-400" />{{ $label }}</dt>
@@ -86,17 +86,17 @@
                             @endforeach
                         </dl>
                         <div class="space-y-3 p-6 pt-2">
-                            <a href="{{ route('register', ['course' => $course->id]) }}" class="btn-brand w-full">Apply now</a>
-                            <a href="{{ route('register.form-pdf') }}" class="btn-outline w-full"><x-site.icon name="download" class="h-5 w-5" /> Paper form</a>
+                            <a href="{{ route('register', ['course' => $course->id]) }}" class="btn-brand w-full">{{ page_text('course.sidebar.apply') }}</a>
+                            <a href="{{ route('register.form-pdf') }}" class="btn-outline w-full"><x-site.icon name="download" class="h-5 w-5" /> {{ page_text('course.sidebar.paper') }}</a>
                             @if ($activeBatch)
-                                <p class="text-center text-sm text-ink-500">Now enrolling: <strong class="text-ink-900">{{ $activeBatch->batch_name }}</strong></p>
+                                <p class="text-center text-sm text-ink-500">{{ page_text('course.sidebar.enrolling') }} <strong class="text-ink-900">{{ $activeBatch->batch_name }}</strong></p>
                             @endif
                         </div>
                     </div>
 
                     @if ($requirements)
                         <div class="rounded-lg bg-ink-50 p-6">
-                            <h2 class="text-2xl">Entry requirements</h2>
+                            <h2 class="text-2xl">{{ page_text('course.requirements.title') }}</h2>
                             <ul class="mt-4 space-y-3">
                                 @foreach ($requirements as $requirement)
                                     <li class="flex gap-3 text-ink-700"><x-site.icon name="check-circle" class="mt-0.5 h-5 w-5 shrink-0 text-ink-950" />{{ $requirement }}</li>
@@ -113,8 +113,8 @@
         <section class="section bg-ink-50">
             <div class="container-site grid gap-12 lg:grid-cols-12">
                 <div class="lg:col-span-4">
-                    <p class="eyebrow">Good to know</p>
-                    <h2 class="section-title">Common questions</h2>
+                    <p class="eyebrow">{{ page_text('course.faq.eyebrow') }}</p>
+                    <h2 class="section-title">{{ page_text('course.faq.title') }}</h2>
                 </div>
                 <div class="lg:col-span-8"><x-site.faq-list :faqs="$faqs" /></div>
             </div>
@@ -124,7 +124,7 @@
     @if ($otherCourses->isNotEmpty())
         <section class="section">
             <div class="container-site">
-                <h2 class="text-4xl">Other programmes</h2>
+                <h2 class="text-4xl">{{ page_text('course.other.title') }}</h2>
                 <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($otherCourses->take(3) as $other)
                         <x-site.course-card :course="$other" />
@@ -134,5 +134,5 @@
         </section>
     @endif
 
-    <x-site.apply-cta :title="'Ready to start ' . $course->objective . '?'" />
+    <x-site.apply-cta :title="page_text('course.cta.title', [':course' => $course->objective])" />
 </x-site.layout>

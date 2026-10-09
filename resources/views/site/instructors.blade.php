@@ -1,6 +1,6 @@
-<x-site.layout title="Our instructors" description="Meet the certified driving instructors and team who train BigRig students in truck, forklift, bus and car driving.">
-    <x-site.page-hero eyebrow="Our team" title="Instructors who have driven the miles" :crumbs="['Instructors' => null]"
-        lead="Every BigRig student is assigned a dedicated instructor for each course — experienced professionals who teach safe, confident and defensive driving." />
+<x-site.layout :title="page_text('instructors.meta.title')" :description="page_text('instructors.meta.description')">
+    <x-site.page-hero :eyebrow="page_text('instructors.hero.eyebrow')" :title="page_text('instructors.hero.title')" :crumbs="['Instructors' => null]"
+        :lead="page_text('instructors.hero.lead')" />
 
     <section class="section">
         <div class="container-site">
@@ -11,7 +11,7 @@
                     @endforeach
                 </div>
             @else
-                <p class="lead">Our instructor profiles are coming soon.</p>
+                <p class="lead">{{ page_text('instructors.empty') }}</p>
             @endif
         </div>
     </section>
@@ -19,9 +19,9 @@
     <section class="bg-ink-50 py-16">
         <div class="container-site grid gap-8 md:grid-cols-3">
             @foreach ([
-                ['shield', 'Safety first', 'Defensive driving and road regulations are part of every programme, not an optional extra.'],
-                ['users', 'Small groups', 'Practical sessions are scheduled so you get real time behind the wheel with your instructor.'],
-                ['award', 'Exam ready', 'Mock tests and inspection practice prepare you for certification and your licence test.'],
+                ['shield', page_text('instructors.values.1.title'), page_text('instructors.values.1.text')],
+                ['users', page_text('instructors.values.2.title'), page_text('instructors.values.2.text')],
+                ['award', page_text('instructors.values.3.title'), page_text('instructors.values.3.text')],
             ] as [$icon, $title, $text])
                 <div>
                     <span class="inline-flex h-12 w-12 items-center justify-center rounded-md bg-ink-950 text-brand-400"><x-site.icon :name="$icon" class="h-6 w-6" /></span>

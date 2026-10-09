@@ -16,6 +16,22 @@ class ForumPostPage extends Component
         $this->post = ForumPost::with('user')->findOrFail($this->postId);
     }
 
+    /**
+     * Authors may delete their own posts; forum moderators (delete_forum) may delete any.
+     */
+    public function deletePost()
+    {
+        $post = ForumPost::findOrFail($this->postId);
+        abort_unless($post->user_id === auth()->id() || auth()->user()->hasPermission('delete_forum'), 403);
+
+        $post->comments()->delete();
+        $post->delete();
+
+        session()->flash('success', 'Post deleted.');
+
+        return $this->redirectRoute('forum.list');
+    }
+
     public function render()
     {
         $post = ForumPost::with('user')->findOrFail($this->postId);
@@ -37,23 +53,11 @@ class ForumPostPage extends Component
                     'name' => $item->category
                 ];
             });
-        
-        $meetups = [
-            (object)[
-                'date' => '2025-07-12',
-                'title' => 'BigRig Driver Networking Event',
-                'link' => '#',
-                'avatars' => ['avatar-02.jpg', 'avatar-03.jpg', 'avatar-04.jpg'],
-                'participants_count' => 22,
-            ],
-            // more meetups...
-        ];
 
         return view('livewire.forum-post-page', [
             'post' => $post,
             'popularPosts' => $popularPosts,
             'categories' => $categories,
-            'meetups' => $meetups,
         ]);
     }
 }

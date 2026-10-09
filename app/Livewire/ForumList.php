@@ -41,23 +41,11 @@ class ForumList extends Component
                     'name' => $item->category
                 ];
             });
-        
-        $meetups = [
-            (object)[
-                'date' => '2025-07-12',
-                'title' => 'BigRig Driver Networking Event',
-                'link' => '#',
-                'avatars' => ['avatar-02.jpg', 'avatar-03.jpg', 'avatar-04.jpg'],
-                'participants_count' => 22,
-            ],
-            // more meetups...
-        ];
 
         return view('livewire.forum-list', [
             'posts' => $posts,
             'popularPosts' => $popularPosts,
             'categories' => $categories,
-            'meetups' => $meetups,
         ]);
     }
 }

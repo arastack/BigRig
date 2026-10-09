@@ -66,3 +66,18 @@ if (! function_exists('after_response')) {
         });
     }
 }
+
+if (! function_exists('page_text')) {
+    /**
+     * Editable website text: the wording saved in Admin > Page text, or the
+     * catalogue default from config/page-text.php. Rich (HTML) values should be
+     * printed with clean_html().
+     */
+    function page_text(string $key, array $replace = []): string
+    {
+        $saved = \App\Models\PageText::values()[$key] ?? null;
+        $text = filled($saved) ? $saved : (\App\Models\PageText::catalogue()[$key]['default'] ?? '');
+
+        return $replace ? strtr($text, $replace) : $text;
+    }
+}

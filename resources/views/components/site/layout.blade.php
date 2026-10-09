@@ -6,7 +6,7 @@
 ])
 @php
     $siteName = $settings->site_name ?? config('app.name');
-    $pageTitle = $title ? $title . ' | ' . $siteName : $siteName . ' — Professional Driver Training in Nigeria';
+    $pageTitle = $title ? $title . ' | ' . $siteName : $siteName . ' — ' . page_text('site.title_suffix');
     $metaDescription = \Illuminate\Support\Str::limit(strip_tags($description ?? $settings->site_description ?? ''), 160);
     $ogImage = $image ?? brand_logo('light', 1200);
     $phone = $settings->business_contact ?? null;
@@ -194,8 +194,8 @@
         <div id="newsletter" class="border-b border-white/10">
             <div class="container-site grid gap-6 py-12 lg:grid-cols-2 lg:items-center">
                 <div>
-                    <h2 class="text-3xl text-white sm:text-4xl">Get intake dates first</h2>
-                    <p class="mt-2 text-ink-300">News on new batches, schedules and driving careers. No spam — unsubscribe any time.</p>
+                    <h2 class="text-3xl text-white sm:text-4xl">{{ page_text('footer.newsletter.title') }}</h2>
+                    <p class="mt-2 text-ink-300">{{ page_text('footer.newsletter.text') }}</p>
                 </div>
                 <form method="POST" action="{{ route('email-subscription') }}" class="w-full">
                     @csrf

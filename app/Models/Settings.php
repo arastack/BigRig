@@ -38,5 +38,6 @@ class Settings extends Model
         'show_preloader',
         'preferred_landing_page',
         'base_currency',
+        'vat_rate',
     ];
 }

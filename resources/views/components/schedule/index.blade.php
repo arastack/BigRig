@@ -103,7 +103,7 @@
                                     <th class="p-2">
                                         <div class="font-semibold text-left">Assigned Students</div>
                                     </th>
-                                    @if (Auth::user()->hasPermission('delete_training_schedule'))
+                                    @if (Auth::user()->hasAnyPermission(['delete_training_schedule', 'update_training_schedule']))
                                     <th class="p-2">
                                         <div class="font-semibold text-center">Action</div>
                                     </th>
@@ -158,9 +158,13 @@
                                                     {{ count($schedule->studentIds()) }}
                                                 </div>
                                             </td>
-                                            @if (Auth::user()->hasPermission('delete_training_schedule'))
+                                            @if (Auth::user()->hasAnyPermission(['delete_training_schedule', 'update_training_schedule']))
                                             <td class="p-2">
                                                 <div class="flex items-center space-x-4 pl-10 md:pl-0">
+                                                    @can('update_training_schedule')
+                                                        <a href="{{ route('schedule.edit', $schedule->id) }}" class="btn-ghost btn-xs"><x-site.icon name="pencil" class="h-4 w-4" /> Edit</a>
+                                                    @endcan
+                                                    @can('delete_training_schedule')
                                                     <button type="button" @click="$store.deleteModal.open({{ $schedule->id }})" aria-controls="delete-modal" class="text-red-500 hover:text-red-600 rounded-full">
                                                         <span class="sr-only">Delete</span>
                                                         <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
@@ -168,6 +172,7 @@
                                                             <path d="M20 9c0-.6-.4-1-1-1h-6c-.6 0-1 .4-1 1v2H8v2h1v10c0 .6.4 1 1 1h12c.6 0 1-.4 1-1V13h1v-2h-4V9zm-6 1h4v1h-4v-1zm7 3v9H11v-9h10z" />
                                                         </svg>
                                                     </button>
+                                                    @endcan
                                                 </div>
                                             </td>
                                             @endif

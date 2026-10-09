@@ -12,6 +12,8 @@ class ForumCreatePost extends Component
 
     public function createPost()
     {
+        abort_unless(auth()->user()->hasPermission('create_forum'), 403);
+
         $this->validate([
             'title' => 'required|min:5',
             'body' => 'required|min:10',

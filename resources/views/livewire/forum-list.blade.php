@@ -47,7 +47,7 @@
             </div>
 
             <!-- Right content -->
-            <x-community.forum-right-content :meetups="$meetups" :popularPosts="$popularPosts" />
+            <x-community.forum-right-content :popularPosts="$popularPosts" />
 
         </div>
 

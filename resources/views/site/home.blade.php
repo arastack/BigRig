@@ -3,10 +3,10 @@
         $currency = $settings->base_currency ?? '₦';
         $slides = $sliders->filter(fn ($s) => $s->image_url)->values();
         $stats = collect([
-            ['value' => $about?->students_count ? number_format($about->students_count) . '+' : null, 'label' => 'Drivers trained'],
-            ['value' => $about?->pass_rate ? rtrim(rtrim(number_format($about->pass_rate, 1), '0'), '.') . '%' : null, 'label' => 'First-time pass rate'],
-            ['value' => $about?->instructors_count ?: null, 'label' => 'Certified instructors'],
-            ['value' => $courses->count() ?: null, 'label' => 'Licence programmes'],
+            ['value' => $about?->students_count ? number_format($about->students_count) . '+' : null, 'label' => page_text('home.stats.1')],
+            ['value' => $about?->pass_rate ? rtrim(rtrim(number_format($about->pass_rate, 1), '0'), '.') . '%' : null, 'label' => page_text('home.stats.2')],
+            ['value' => $about?->instructors_count ?: null, 'label' => page_text('home.stats.3')],
+            ['value' => $courses->count() ?: null, 'label' => page_text('home.stats.4')],
         ])->filter(fn ($s) => $s['value']);
     @endphp
 
@@ -19,7 +19,7 @@
 
         <div class="container-site grid items-center gap-10 pb-28 pt-14 lg:min-h-[640px] lg:grid-cols-12 lg:pb-32 lg:pt-20">
             <div class="relative z-10 lg:col-span-6">
-                <p class="eyebrow">Ibadan · Professional driver training</p>
+                <p class="eyebrow">{{ page_text('home.hero.eyebrow') }}</p>
                 @forelse ($slides as $k => $slide)
                     <div x-show="i === {{ $k }}" @if ($k > 0) x-cloak @endif
                          x-transition:enter="transition duration-500 ease-out" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0">
@@ -31,12 +31,12 @@
                         <p class="mt-6 max-w-md text-lg leading-relaxed text-ink-200">{{ \Illuminate\Support\Str::limit(strip_tags($slide->text), 220) }}</p>
                     </div>
                 @empty
-                    <h1 class="mt-5 text-6xl text-white sm:text-7xl xl:text-8xl">Drive professionally. Drive with BigRig.</h1>
+                    <h1 class="mt-5 text-6xl text-white sm:text-7xl xl:text-8xl">{{ page_text('home.hero.title') }}</h1>
                 @endforelse
 
                 <div class="mt-9 flex flex-col gap-3 sm:flex-row">
-                    <a href="{{ route('register') }}" class="btn-brand text-lg">Start your application <x-site.icon name="arrow-right" class="h-5 w-5" /></a>
-                    <a href="{{ route('courses') }}" class="btn-outline-light text-lg">Explore courses</a>
+                    <a href="{{ route('register') }}" class="btn-brand text-lg">{{ page_text('home.hero.button_primary') }} <x-site.icon name="arrow-right" class="h-5 w-5" /></a>
+                    <a href="{{ route('courses') }}" class="btn-outline-light text-lg">{{ page_text('home.hero.button_secondary') }}</a>
                 </div>
 
                 @if ($slides->count() > 1)
@@ -82,11 +82,11 @@
         <div class="container-site">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div class="max-w-2xl">
-                    <p class="eyebrow">Licence programmes</p>
-                    <h2 class="section-title">Pick the wheel you want to master</h2>
-                    <p class="lead mt-4">Structured theory and hands-on practical sessions, an examination at the end, and an instructor assigned to you from day one.</p>
+                    <p class="eyebrow">{{ page_text('home.courses.eyebrow') }}</p>
+                    <h2 class="section-title">{{ page_text('home.courses.title') }}</h2>
+                    <p class="lead mt-4">{{ page_text('home.courses.lead') }}</p>
                 </div>
-                <a href="{{ route('courses') }}" class="link-underline shrink-0">Compare all courses</a>
+                <a href="{{ route('courses') }}" class="link-underline shrink-0">{{ page_text('home.courses.link') }}</a>
             </div>
             <div class="mt-12 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach ($courses as $course)
@@ -101,20 +101,20 @@
         <div class="container-site">
             <div class="grid gap-12 lg:grid-cols-12">
                 <div class="lg:col-span-4">
-                    <p class="eyebrow">How admission works</p>
-                    <h2 class="section-title text-white">From application to the driver's seat</h2>
-                    <p class="mt-5 text-lg leading-relaxed text-ink-300">No queues and no paperwork runs. Apply online, pay securely, and track every step from your student portal.</p>
+                    <p class="eyebrow">{{ page_text('home.steps.eyebrow') }}</p>
+                    <h2 class="section-title text-white">{{ page_text('home.steps.title') }}</h2>
+                    <p class="mt-5 text-lg leading-relaxed text-ink-300">{{ page_text('home.steps.lead') }}</p>
                     <div class="mt-8 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-                        <a href="{{ route('register') }}" class="btn-brand">Apply online</a>
-                        <a href="{{ route('register.form-pdf') }}" class="btn-outline-light"><x-site.icon name="download" class="h-5 w-5" /> Paper form</a>
+                        <a href="{{ route('register') }}" class="btn-brand">{{ page_text('home.steps.button_primary') }}</a>
+                        <a href="{{ route('register.form-pdf') }}" class="btn-outline-light"><x-site.icon name="download" class="h-5 w-5" /> {{ page_text('home.steps.button_secondary') }}</a>
                     </div>
                 </div>
                 <ol class="relative grid gap-6 sm:grid-cols-2 lg:col-span-8">
                     @foreach ([
-                        ['icon' => 'steering', 'title' => 'Choose your course', 'text' => 'Compare programmes, durations and fees. Not sure which fits? Call or WhatsApp us.'],
-                        ['icon' => 'file-text', 'title' => 'Apply in 10 minutes', 'text' => 'Fill in your personal details, a short medical declaration and your course choice.'],
-                        ['icon' => 'credit-card', 'title' => 'Pay securely', 'text' => 'Pay online by card, bank transfer or USSD through Paystack. You get confirmation instantly.'],
-                        ['icon' => 'truck', 'title' => 'Start training', 'text' => 'Your instructor and timetable appear in your student portal, along with your study materials.'],
+                        ['icon' => 'steering', 'title' => page_text('home.steps.1.title'), 'text' => page_text('home.steps.1.text')],
+                        ['icon' => 'file-text', 'title' => page_text('home.steps.2.title'), 'text' => page_text('home.steps.2.text')],
+                        ['icon' => 'credit-card', 'title' => page_text('home.steps.3.title'), 'text' => page_text('home.steps.3.text')],
+                        ['icon' => 'truck', 'title' => page_text('home.steps.4.title'), 'text' => page_text('home.steps.4.text')],
                     ] as $n => $step)
                         <li class="relative rounded-lg bg-white/[0.04] p-6 ring-1 ring-white/10">
                             <div class="flex items-center justify-between">
@@ -138,20 +138,20 @@
                     <img src="{{ img($courses->sortByDesc('price')->first()?->image_url, 900) }}" alt="A BigRig training truck" class="aspect-[4/5] w-full rounded-lg object-cover" loading="lazy" width="900" height="1125">
                     <div class="absolute -bottom-6 -right-4 max-w-[15rem] rounded-lg bg-brand-400 p-5 shadow-[6px_6px_0_0_theme(colors.ink.950)] sm:-right-6">
                         <p class="font-display text-5xl font-extrabold leading-none text-ink-950">{{ $courses->min('duration') }}–{{ $courses->max('duration') }}</p>
-                        <p class="mt-1 text-sm font-semibold text-ink-900">weeks from first lesson to certification</p>
+                        <p class="mt-1 text-sm font-semibold text-ink-900">{{ page_text('home.why.badge') }}</p>
                     </div>
                 </div>
             </div>
             <div class="lg:col-span-7">
-                <p class="eyebrow">Why BigRig</p>
-                <h2 class="section-title">{{ $about?->history_title ?? 'Trained by professionals. Ready for the road.' }}</h2>
+                <p class="eyebrow">{{ page_text('home.why.eyebrow') }}</p>
+                <h2 class="section-title">{{ $about?->history_title ?? page_text('home.why.title') }}</h2>
                 <div class="prose-site mt-6 text-ink-600">{!! clean_html(\Illuminate\Support\Str::limit($about?->mission_statement ?? '', 600)) !!}</div>
                 <ul class="mt-8 grid gap-4 sm:grid-cols-2">
-                    @foreach (['Hands-on practice on real trucks, buses, forklifts and cars', 'A dedicated instructor for every course you take', 'Safety, defensive driving and road regulations built in', 'Licensing support and job placement assistance'] as $point)
+                    @foreach ([page_text('home.why.points.1'), page_text('home.why.points.2'), page_text('home.why.points.3'), page_text('home.why.points.4')] as $point)
                         <li class="flex gap-3"><span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-400"><x-site.icon name="check" class="h-4 w-4 text-ink-950" /></span><span class="font-medium text-ink-800">{{ $point }}</span></li>
                     @endforeach
                 </ul>
-                <a href="{{ route('about-us') }}" class="btn-outline mt-10">More about us</a>
+                <a href="{{ route('about-us') }}" class="btn-outline mt-10">{{ page_text('home.why.button') }}</a>
             </div>
         </div>
     </section>
@@ -161,8 +161,8 @@
         <section class="section bg-ink-50">
             <div class="container-site">
                 <div class="max-w-2xl">
-                    <p class="eyebrow">What we offer</p>
-                    <h2 class="section-title">More than a licence</h2>
+                    <p class="eyebrow">{{ page_text('home.services.eyebrow') }}</p>
+                    <h2 class="section-title">{{ page_text('home.services.title') }}</h2>
                 </div>
                 <div class="mt-12 grid gap-px overflow-hidden rounded-lg border border-ink-100 bg-ink-100 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($services as $service)
@@ -179,9 +179,9 @@
                             'lg:col-span-1' => $services->count() % 3 === 2,
                             'lg:col-span-2' => $services->count() % 3 === 1,
                         ])>
-                            <h3 class="text-3xl">Not sure which training fits?</h3>
-                            <p class="mt-3 max-w-md text-ink-800">Tell us about your experience and goals — we'll recommend the right programme and next intake.</p>
-                            <span class="mt-6 inline-flex items-center gap-2 font-display text-lg font-bold uppercase tracking-wide text-ink-950">Talk to admissions <x-site.icon name="arrow-right" class="h-5 w-5 transition group-hover:translate-x-1" /></span>
+                            <h3 class="text-3xl">{{ page_text('home.services.cta_title') }}</h3>
+                            <p class="mt-3 max-w-md text-ink-800">{{ page_text('home.services.cta_text') }}</p>
+                            <span class="mt-6 inline-flex items-center gap-2 font-display text-lg font-bold uppercase tracking-wide text-ink-950">{{ page_text('home.services.cta_link') }} <x-site.icon name="arrow-right" class="h-5 w-5 transition group-hover:translate-x-1" /></span>
                         </a>
                     @endif
                 </div>
@@ -212,10 +212,10 @@
             <div class="container-site">
                 <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <div class="max-w-2xl">
-                        <p class="eyebrow">Your instructors</p>
-                        <h2 class="section-title">Experienced drivers who teach</h2>
+                        <p class="eyebrow">{{ page_text('home.team.eyebrow') }}</p>
+                        <h2 class="section-title">{{ page_text('home.team.title') }}</h2>
                     </div>
-                    <a href="{{ route('our-instructors') }}" class="link-underline shrink-0">Meet the whole team</a>
+                    <a href="{{ route('our-instructors') }}" class="link-underline shrink-0">{{ page_text('home.team.link') }}</a>
                 </div>
                 <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     @foreach ($team as $member)
@@ -231,8 +231,8 @@
         <section class="section on-dark bg-ink-950 text-white">
             <div class="container-site">
                 <div class="max-w-2xl">
-                    <p class="eyebrow">Student stories</p>
-                    <h2 class="section-title text-white">Hear it from the driver's seat</h2>
+                    <p class="eyebrow">{{ page_text('home.testimonials.eyebrow') }}</p>
+                    <h2 class="section-title text-white">{{ page_text('home.testimonials.title') }}</h2>
                 </div>
                 <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     @foreach ($testimonials as $testimonial)
@@ -263,13 +263,13 @@
         <section class="section">
             <div class="container-site grid gap-12 lg:grid-cols-12">
                 <div class="lg:col-span-4">
-                    <p class="eyebrow">Questions</p>
-                    <h2 class="section-title">Before you apply</h2>
-                    <p class="lead mt-4">Can't find your answer? <a href="{{ route('contact') }}" class="link-underline">Send us a message</a> and our admissions team will help.</p>
+                    <p class="eyebrow">{{ page_text('home.faq.eyebrow') }}</p>
+                    <h2 class="section-title">{{ page_text('home.faq.title') }}</h2>
+                    <p class="lead mt-4">{{ page_text('home.faq.lead_before') }} <a href="{{ route('contact') }}" class="link-underline">{{ page_text('home.faq.lead_link') }}</a> {{ page_text('home.faq.lead_after') }}</p>
                 </div>
                 <div class="lg:col-span-8">
                     <x-site.faq-list :faqs="$faqs" />
-                    <a href="{{ route('faq') }}" class="link-underline mt-6 inline-block">See all questions</a>
+                    <a href="{{ route('faq') }}" class="link-underline mt-6 inline-block">{{ page_text('home.faq.all_link') }}</a>
                 </div>
             </div>
         </section>
@@ -279,7 +279,7 @@
     @if ($partners->isNotEmpty())
         <section class="border-t border-ink-100 py-12">
             <div class="container-site flex flex-col items-center gap-8 lg:flex-row">
-                <p class="eyebrow shrink-0">Recognised by</p>
+                <p class="eyebrow shrink-0">{{ page_text('home.partners.eyebrow') }}</p>
                 <ul class="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
                     @foreach ($partners as $partner)
                         <li><img src="{{ img($partner->logo, 300) }}" alt="{{ $partner->name }}" class="h-12 w-auto grayscale transition hover:grayscale-0" loading="lazy"></li>

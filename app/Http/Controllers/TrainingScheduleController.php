@@ -217,19 +217,66 @@ class TrainingScheduleController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Edit one training session: when, who teaches it, the topic and who attends.
      */
     public function edit(string $id)
     {
-        //
+        $schedule = TrainingSchedule::with(['course', 'batch'])->findOrFail($id);
+
+        $studentIds = StudentInstructorDistribution::where('course_id', $schedule->course_id)
+            ->when($schedule->batch_id, fn ($q) => $q->where('enrolment_batch_id', $schedule->batch_id))
+            ->pluck('student_id')
+            ->merge($schedule->studentIds())
+            ->unique();
+
+        return view('pages.schedule.edit', [
+            'schedule' => $schedule,
+            'topics' => Curriculum::where('objective_id', $schedule->course_id)->orderBy('id')->get(),
+            'instructors' => User::whereNull('suspended_at')
+                ->whereHas('roles', fn ($q) => $q->where('portal', \App\Models\Role::PORTAL_INSTRUCTOR))
+                ->orderBy('firstName')->get(),
+            'students' => User::whereIn('id', $studentIds)->orderBy('firstName')->get(),
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
-        //
+        $schedule = TrainingSchedule::findOrFail($id);
+
+        $data = $request->validate([
+            'schedule_date' => ['required', 'date'],
+            'time_start' => ['required', 'date_format:H:i'],
+            'time_stop' => ['required', 'date_format:H:i', 'after:time_start'],
+            'instructor_id' => ['required', 'exists:users,id'],
+            'topic_id' => ['required', 'exists:curriculum,id'],
+            'session_type' => ['required', 'in:theory,practical'],
+            'students' => ['nullable', 'array'],
+            'students.*' => ['integer', 'exists:users,id'],
+        ]);
+
+        // The instructor can't be teaching another session at the same time
+        $clash = TrainingSchedule::where('id', '!=', $schedule->id)
+            ->where('instructor_id', $data['instructor_id'])
+            ->whereDate('schedule_date', $data['schedule_date'])
+            ->where('time_start', '<', $data['time_stop'])
+            ->where('time_stop', '>', $data['time_start'])
+            ->exists();
+
+        if ($clash) {
+            return back()->withInput()->with('error', 'That instructor already has a session overlapping this time.');
+        }
+
+        $schedule->update([
+            'schedule_date' => $data['schedule_date'],
+            'time_start' => $data['time_start'],
+            'time_stop' => $data['time_stop'],
+            'instructor_id' => $data['instructor_id'],
+            'topic_id' => $data['topic_id'],
+            'session_type' => $data['session_type'],
+            'students' => array_map('intval', $data['students'] ?? []),
+        ]);
+
+        return redirect()->route('schedule')->with('success', 'Training session updated.');
     }
 
     /**

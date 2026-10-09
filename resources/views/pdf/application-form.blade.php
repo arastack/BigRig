@@ -5,9 +5,12 @@
     $ticks = fn (array $options) => collect($options)->map(fn ($o) => $box . ' ' . e($o))->join('&nbsp;&nbsp;');
     $field = fn ($label, $required = false) => '<div class="lbl">' . e($label) . ($required ? ' *' : '') . '</div><div class="line"></div>';
     $requirements = fn ($course) => collect($course->requirementList())->join('; ');
-    // Package discounts are listed straight after the last forklift course (or at the end)
-    $forklift = $courses->keys()->filter(fn ($i) => stripos($courses[$i]->objective, 'forklift') !== false)->last();
-    $comboAfter = $forklift ?? $courses->count() - 1;
+    // Package discounts are listed straight after the last course that belongs to a package (or at the end)
+    $packages = \App\Support\Pricing::packages();
+    $vatLabel = \App\Support\Pricing::vatLabel();
+    $packageCourseIds = collect($packages)->pluck('groups')->flatten()->map(fn ($id) => (int) $id)->unique();
+    $lastInPackage = $courses->keys()->filter(fn ($i) => $packageCourseIds->contains((int) $courses[$i]->id))->last();
+    $comboAfter = $lastInPackage ?? $courses->count() - 1;
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -176,11 +179,11 @@
                         <td class="price">{!! $currency !!}{{ number_format($course->price) }}</td>
                     </tr>
                     @if ($loop->index === $comboAfter)
-                        @foreach (config('admissions.combos', []) as $combo)
+                        @foreach ($packages as $combo)
                             <tr>
                                 <td><span class="box">&#9744;</span></td>
-                                <td><strong>{{ $combo['name'] }}</strong><div class="req">{!! str_replace('₦', $currency, e($combo['description'])) !!}</div></td>
-                                <td><strong>{{ $combo['weeks'] }} Weeks</strong></td>
+                                <td><strong>{{ $combo['name'] }}</strong>@if ($combo['description'])<div class="req">{!! str_replace('₦', $currency, e($combo['description'])) !!}</div>@endif</td>
+                                <td><strong>{{ $combo['weeks'] ? $combo['weeks'] . ' Weeks' : '—' }}</strong></td>
                                 <td class="price">{!! $currency !!}{{ number_format($combo['discount']) }}<br>DISCOUNT</td>
                             </tr>
                         @endforeach
@@ -188,7 +191,7 @@
                 @endforeach
             </tbody>
         </table>
-        <div class="note" style="margin-top:4px; font-weight:normal;">Fees exclude VAT at 7.5%, which is added to the total due.</div>
+        <div class="note" style="margin-top:4px; font-weight:normal;">Fees exclude VAT at {{ $vatLabel }}%, which is added to the total due.</div>
 
         <div class="footer">PAGE 2 OF 3 | PROFESSIONAL TRAINING &bull; CERTIFIED DRIVERS &bull; BRIGHTER FUTURES</div>
     @else
@@ -211,7 +214,7 @@
 
         <div class="bar">9. PAYMENT INFORMATION</div>
         <table class="pay">
-            @foreach (['Registration / Application Fee', 'Training Fee (as selected)', 'Discount (if applicable)', 'VAT (7.5%)', 'Total Due', 'Amount Paid', 'Outstanding Balance'] as $row)
+            @foreach (['Registration / Application Fee', 'Training Fee (as selected)', 'Discount (if applicable)', 'VAT (' . $vatLabel . '%)', 'Total Due', 'Amount Paid', 'Outstanding Balance'] as $row)
                 <tr><td class="k">{{ $row }}</td><td>{!! $currency !!} ______________________________</td></tr>
             @endforeach
             <tr><td class="k">Payment Method</td><td>{!! $ticks(['Cash', 'Bank Transfer', 'POS', 'Other']) !!}</td></tr>

@@ -18,6 +18,8 @@ class ChatInterface extends Component
 
     public function mount()
     {
+        abort_unless(Auth::user()?->hasPermission('read_chats'), 403);
+
         $this->search(); // Load default user list
     }
 

@@ -23,6 +23,8 @@ class ChatBox extends Component
 
     public function mount($receiverId)
     {
+        abort_unless(Auth::user()?->hasPermission('read_chats'), 403);
+
         $this->receiverId = $receiverId;
         $this->receiver = User::find($receiverId);
         $this->loadMessages();
@@ -81,6 +83,8 @@ class ChatBox extends Component
 
     public function sendMessage()
     {
+        abort_unless(Auth::user()?->hasPermission('read_chats'), 403);
+
         $this->validate();
 
         Message::create([

@@ -10,6 +10,8 @@
             ['Partners & clients', 'clients', 'users', 'update_website_management'],
             ['Achievements', 'achievements', 'award', 'update_website_management'],
             ['Courses & fees', 'objectives', 'truck', 'manage_course_catalogue'],
+            ['Packages & VAT', 'packages', 'award', 'manage_course_catalogue'],
+            ['Page text', 'admin.page-text', 'pencil', 'update_website_management'],
         ],
         'System' => [
             ['Site information', 'site_settings', 'gauge', 'update_site_settings'],

@@ -17,6 +17,8 @@ class ForumComments extends Component
 
     public function addComment()
     {
+        abort_unless(auth()->user()->hasPermission('create_forum'), 403);
+
         $this->validate([
             'commentBody' => 'required|min:3',
         ]);
@@ -28,6 +30,14 @@ class ForumComments extends Component
         ]);
 
         $this->commentBody = '';
+    }
+
+    public function deleteComment(int $commentId)
+    {
+        $comment = ForumComment::where('forum_post_id', $this->postId)->findOrFail($commentId);
+        abort_unless($comment->user_id === auth()->id() || auth()->user()->hasPermission('delete_forum'), 403);
+
+        $comment->delete();
     }
 
     public function render()
