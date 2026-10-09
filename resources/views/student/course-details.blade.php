@@ -347,14 +347,14 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Course Requirements</h2>
                 <div class="prose dark:prose-invert max-w-none">
-                    {!! $course->requirement !!}
+                    {!! clean_html($course->requirement) !!}
                 </div>
 
                 @if($course->course_details)
                     <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Additional Details</h3>
                         <div class="prose dark:prose-invert max-w-none">
-                            {!! $course->course_details !!}
+                            {!! clean_html($course->course_details) !!}
                         </div>
                     </div>
                 @endif

@@ -77,7 +77,7 @@
                                                 theory_session: '{{ $objective->theory_session }}',
                                                 practical_session: '{{ $objective->practical_session }}',
                                                 examination: '{{ $objective->examination }}',
-                                                requirements: `{!! $objective->requirement !!}`,
+                                                requirements: @js(clean_html($objective->requirement)),
                                                 video_url: '{{ $objective->video_url }}'
                                             })" 
                                             aria-controls="edit-modal" class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600">

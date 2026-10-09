@@ -100,6 +100,13 @@ class AnnouncementController extends Controller
 
         $instructor = Auth::user();
 
+        // School-wide announcements (no course) need the manage_announcements permission
+        if (! $request->course_id && ! $instructor->hasPermission('manage_announcements')) {
+            return redirect()->back()
+                ->with('error', 'Please choose one of your courses for this announcement.')
+                ->withInput();
+        }
+
         // Verify instructor has access to the selected course
         if ($request->course_id) {
             $hasAccess = StudentInstructorDistribution::where('instructor_id', $instructor->id)

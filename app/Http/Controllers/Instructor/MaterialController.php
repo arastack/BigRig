@@ -21,13 +21,15 @@ class MaterialController extends Controller
         $instructor = Auth::user();
 
         // Get courses assigned to this instructor
-        $assignedCourseIds = StudentInstructorDistribution::pluck('course_id')
+        $assignedCourseIds = StudentInstructorDistribution::where('instructor_id', $instructor->id)
+            ->pluck('course_id')
             ->unique();
 
         $courses = TrainingObjective::whereIn('id', $assignedCourseIds)->get();
 
         // Get materials uploaded by this instructor
         $materials = CourseMaterial::with('objective')
+            ->whereIn('objective_id', $assignedCourseIds)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -73,7 +75,12 @@ class MaterialController extends Controller
 
         // Generate unique filename
         $originalName = $file->getClientOriginalName();
-        $extension = $file->getClientOriginalExtension();
+        // Name the stored file from its detected content type, never the client-supplied extension
+        $extension = strtolower((string) $file->extension());
+        $allowed = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip', 'rar', 'jpg', 'jpeg', 'png', 'gif'];
+        if (! in_array($extension, $allowed, true)) {
+            return redirect()->back()->with('error', 'This file type is not allowed.');
+        }
         $fileName = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '_' . time() . '.' . $extension;
 
         // Create directory structure: materials/course_id/

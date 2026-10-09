@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\PaymentGatewayConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Contracts\Encryption\DecryptException;
 
 class PaymentGatewayConfigController extends Controller
 {
@@ -17,15 +16,8 @@ class PaymentGatewayConfigController extends Controller
         // Fetch all payment gateway configurations
         $gateways = PaymentGatewayConfig::all();
 
-        // Decrypt secret keys ahead of time
-        $gateways->transform(function ($gateway) {
-            try {
-                $gateway->decrypted_secret_key = Crypt::decryptString($gateway->secret_key);
-            } catch (DecryptException $e) {
-                $gateway->decrypted_secret_key = '';
-            }
-            return $gateway;
-        });
+        // Never send secrets to the browser; only say whether one is stored.
+        $gateways->each(fn ($gateway) => $gateway->has_secret_key = filled($gateway->secret_key));
 
         return view('pages.settings.payment-gateway-config', compact('gateways'));
     }
@@ -80,7 +72,10 @@ class PaymentGatewayConfigController extends Controller
 
         // Update the config
         $gateway->public_key = $request->public_key;
-        $gateway->secret_key = Crypt::encryptString($request->secret_key); // Optionally encrypt
+        // A blank secret keeps the stored one
+        if (filled($request->secret_key)) {
+            $gateway->secret_key = Crypt::encryptString($request->secret_key);
+        }
         $gateway->merchant_email = $request->merchant_email;
         $gateway->sandbox     = $request->sandbox;
 

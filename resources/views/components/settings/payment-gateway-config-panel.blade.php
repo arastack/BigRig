@@ -44,7 +44,7 @@
                         <!-- Secret Key -->
                         <div class="w-full">
                             <label class="text-sm font-medium mb-1" for="secret_key_{{ $gateway->id }}">Secret Key</label>
-                            <input id="secret_key_{{ $gateway->id }}" class="form-input w-full" type="password" name="secret_key" value="{{ $gateway->decrypted_secret_key }}" required />
+                            <input id="secret_key_{{ $gateway->id }}" class="form-input w-full" type="password" name="secret_key" value="" autocomplete="new-password" placeholder="{{ $gateway->has_secret_key ? '•••••••• stored — leave blank to keep' : 'Enter secret key' }}" />
                         </div>
 
                         <!-- Public Key -->

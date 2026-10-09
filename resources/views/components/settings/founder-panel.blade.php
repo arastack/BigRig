@@ -27,7 +27,7 @@
                 <div class="sm:flex sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-5">
                     <div class="sm:w-full">
                         <label class="block text-sm font-medium mb-1" for="speech_content">Welcome Message <span class="text-red-500">*</span></label>
-                        <textarea name="speech_content" class="form-textarea w-full px-2 py-1" id="editor" rows="10" cols="80">{!! optional($founder)->speech_content !!}</textarea>
+                        <textarea name="speech_content" class="form-textarea w-full px-2 py-1" id="editor" rows="10" cols="80">{!! clean_html(optional($founder)->speech_content) !!}</textarea>
                     </div>
                 </div>
             </section>

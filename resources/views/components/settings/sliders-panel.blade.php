@@ -26,7 +26,7 @@
                                 <a href="javascript:void(0)">
                                     <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">{{$slider->title }}</h3>
                                 </a>
-                                <div class="text-sm mb-4">{!! $slider->text !!}</div>
+                                <div class="text-sm mb-4">{!! clean_html($slider->text) !!}</div>
                                 <div class="text-sm text-yellow-500 mb-2">Button: 
                                     <a href="{{ $slider->button_url ? url($slider->button_url) : 'javascript:void(0)' }}" 
                                     title="{{ $slider->button_url ?? 'No URL Provided' }}">
@@ -38,7 +38,7 @@
                                     <!-- Rating and price -->
                                     <div class="flex flex-wrap items-center space-x-2 mr-2">
                                     </div>
-                                    <button class="text-sm text-violet-500 underline hover:no-underline" @click="$store.editModal.open({ id: {{ $slider->id }}, slider_title: '{{ $slider->title }}', slider_text: '{!! $slider->text !!}', button_name: '{{ $slider->button_name }}', button_url: '{{ $slider->button_url }}'})" aria-controls="edit-modal">Edit</button>
+                                    <button class="text-sm text-violet-500 underline hover:no-underline" @click="$store.editModal.open({ id: {{ $slider->id }}, slider_title: '{{ $slider->title }}', slider_text: @js(clean_html($slider->text)), button_name: '{{ $slider->button_name }}', button_url: '{{ $slider->button_url }}'})" aria-controls="edit-modal">Edit</button>
                                     <button class="text-sm text-red-500 underline hover:no-underline" @click="$store.deleteModal.open({{ $slider->id }})" aria-controls="delete-modal">Remove</button>
                                 </div>
                             </div>

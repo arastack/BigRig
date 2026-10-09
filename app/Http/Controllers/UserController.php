@@ -22,16 +22,6 @@ class UserController extends Controller
         //     return redirect()->back()->with('error', 'Permission denied!');
         // }
 
-        $user = Auth::user();
-
-        // Check subscription payment status
-        $subscription = Subscription::where('user_id', $user->id)->first();
-
-        if ($subscription && $subscription->payment_status === 'pending') {
-            // Redirect to checkout/pay if payment is still pending
-            return redirect('/checkout/pay');
-        }
-
         if (Auth::user()->hasPermission('read_suspend_user_account')) {
             $users = User::whereHas('roles', function ($query) {
                         $query->where('roles.id', 10);
@@ -54,50 +44,47 @@ class UserController extends Controller
         return view('pages/community/profile', compact('userInfo'));
     }    
 
+    /**
+     * Suspend an account, or lift an existing suspension.
+     */
     public function deactivate($id)
     {
         $user = User::findOrFail($id);
+        $actor = Auth::user();
 
-        // Toggle user visibility (0 → 1, 1 → 0)
+        if ($user->is($actor)) {
+            return redirect()->back()->with('error', 'You cannot suspend your own account.');
+        }
+
+        if ($user->isSuperAdmin() && ! $actor->isSuperAdmin()) {
+            abort(403, 'Only a SuperAdmin can suspend a SuperAdmin account.');
+        }
+
+        if ($user->isSuspended()) {
+            // Students only regain portal access if they have paid
+            $user->update([
+                'suspended_at' => null,
+                'user_active' => ! $user->isStudent() || $user->hasCompletedPayment(),
+            ]);
+
+            return redirect()->back()->with('success', 'Account reactivated.');
+        }
+
         $user->update([
-            'user_active' => !$user->user_active,
-            'website_visibility' => false
+            'suspended_at' => now(),
+            'user_active' => false,
+            'website_visibility' => false,
         ]);
 
-        return redirect()->back()->with('success', 'User account status updated successfully!');
+        return redirect()->back()->with('success', 'Account suspended. The user can no longer sign in.');
     }
 
     public function verifyAccount($id)
     {
         $user = User::findOrFail($id);
 
-        // Toggle user visibility (0 → 1, 1 → 0)
-        $user->update([
-            'user_active' => 1,
-            'email_verified_at' => now(),
-        ]);
+        $user->forceFill(['email_verified_at' => $user->email_verified_at ?? now()])->save();
 
-        return redirect()->back()->with('success', 'User account verified successfully!');
-    }
-
-    public function makeAdmin(Request $request)
-    {
-        // Find User
-        $user = User::findOrFail($request->input('id'));
-
-        dd($user);
-
-        // Find the 'Admin' role
-        $adminRole = Role::where('name', 'Admin')->first();
-
-        if (!$adminRole) {
-            return redirect()->back()->with('error', 'Admin role not found!');
-        }
-
-        // Assign the 'Admin' role to the user
-        $user->role()->associate($adminRole);
-        $user->save();
-
-        return redirect()->back()->with('success', 'User updated to Admin!');
+        return redirect()->back()->with('success', 'Email address marked as verified.');
     }
 }

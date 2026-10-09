@@ -48,7 +48,7 @@ class CourseController extends Controller
 
         // Update other fields
         $objective->update([
-            'course_details' => addslashes($request->input('course_details')),
+            'course_details' => $request->input('course_details'),
         ]);
 
         return redirect()->back()->with('success', 'Course updated successfully!');

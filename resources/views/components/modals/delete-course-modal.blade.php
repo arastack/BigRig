@@ -53,9 +53,9 @@
                         <button class="btn-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-gray-300" @click="$store.deleteModal.close()">
                             Cancel
                         </button>
-                        <form x-bind:action="`/settings/objectives/destroy/${$store.deleteModal.objectiveId}`" method="POST">
+                        <form x-bind:action="'{{ route('objective.destroy', '__ID__') }}'.replace('__ID__', $store.deleteModal.objectiveId)" method="POST">
                             @csrf
-                            @method('GET')
+                            @method('DELETE')
                             <button type="submit" class="btn-sm bg-red-500 hover:bg-red-600 text-white">
                                 Yes, Delete it
                             </button>

@@ -2,357 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PaymentGatewayConfig;
+use App\Models\Subscription;
+use App\Services\EnrolmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\Models\User;
-use App\Models\Subscription;
-use App\Models\EnrolmentBatch;
-use App\Models\PaymentGatewayConfig;
-use App\Models\StudentInstructorDistribution;
-use App\Models\TrainingObjective;
-use App\Models\RoleCourse;
-use App\Services\InstructorAssignmentService;
-use GuzzleHttp\Client;
+use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
-    /**
-     * Define roles that should NOT be assigned to students
-     */
-    private const EXCLUDED_ROLES = [
-        1,  // SuperAdmin
-        2,  // IT Consultant
-        3,  // Admin
-        4,  // Lead Instructor
-        10  // Student
-    ];
+    private const PAYSTACK_API = 'https://api.paystack.co';
 
-    /**
-     * Define roles that CAN teach students
-     */
-    private const INSTRUCTOR_ROLES = [
-        5,  // MV Instructor
-        6,  // CMV Instructor
-        7,  // Forklift Instructor
-        8,  // Defensive Driving Instructor
-        9,  // Safety & Compliance Instructor
-    ];
-
-    /**
-     * Assign an instructor to a student based on the course ID.
-     */
-    public function assignInstructorToStudent($studentId, $courseId)
+    public function __construct(private EnrolmentService $enrolment)
     {
-        try {
-            Log::info("=== Starting instructor assignment ===");
-            Log::info("Student ID: {$studentId}, Course ID: {$courseId}");
-
-            // Check if course exists
-            $course = TrainingObjective::find($courseId);
-            if (!$course) {
-                Log::error("Course not found: {$courseId}");
-                return false;
-            }
-            Log::info("Course found: {$course->objective}");
-
-            // Get eligible instructor roles for this course, excluding admin roles
-            $instructorRoles = RoleCourse::where('course_id', $courseId)
-                ->whereNotIn('role_id', self::EXCLUDED_ROLES)  // Exclude admin/management roles
-                ->pluck('role_id')
-                ->toArray();
-
-            Log::info("Eligible instructor role IDs for course {$courseId} (excluding admin roles): " . json_encode($instructorRoles));
-
-            if (empty($instructorRoles)) {
-                Log::warning("No eligible instructor roles found for course ID: {$courseId}");
-                // Try fallback method with teaching instructors only
-                return $this->assignTeachingInstructor($studentId, $courseId);
-            }
-
-            return $this->assignStudentToInstructor($studentId, $instructorRoles, $courseId);
-
-        } catch (\Exception $e) {
-            Log::error("Error in assignInstructorToStudent: " . $e->getMessage());
-            Log::error("Stack trace: " . $e->getTraceAsString());
-            return false;
-        }
-    }
-
-    /**
-     * Logic to assign student to the least-loaded instructor from the eligible roles.
-     */
-    private function assignStudentToInstructor($studentId, $instructorRoles, $courseId)
-    {
-        try {
-            Log::info("Checking if student {$studentId} is already assigned to course {$courseId}");
-
-            // Check if already assigned
-            $alreadyAssigned = StudentInstructorDistribution::where('student_id', $studentId)
-                ->where('course_id', $courseId)
-                ->first();
-
-            if ($alreadyAssigned) {
-                Log::info("Student {$studentId} already assigned to course {$courseId} with instructor {$alreadyAssigned->instructor_id}");
-                return true;
-            }
-
-            // Get student details
-            $student = User::find($studentId);
-            if (!$student) {
-                Log::error("Student not found: {$studentId}");
-                return false;
-            }
-
-            Log::info("Student found: {$student->firstName} {$student->lastName}");
-
-            // Ensure student has a batch
-            $batchId = $this->ensureStudentHasBatch($student);
-            if (!$batchId) {
-                Log::error("Failed to get/create batch for student {$studentId}");
-                return false;
-            }
-
-            Log::info("Using batch ID: {$batchId}");
-
-            // Find the best instructor (excluding admin roles)
-            $instructor = $this->findBestInstructor($instructorRoles, $courseId);
-
-            if (!$instructor) {
-                Log::warning("No instructor found with roles: " . json_encode($instructorRoles));
-                return $this->assignTeachingInstructor($studentId, $courseId);
-            }
-
-            Log::info("Selected instructor: {$instructor->id} - {$instructor->firstName} {$instructor->lastName}");
-
-            // Create the assignment
-            $assignment = StudentInstructorDistribution::create([
-                'enrolment_batch_id' => $batchId,
-                'student_id' => $studentId,
-                'instructor_id' => $instructor->id,
-                'course_id' => $courseId,
-            ]);
-
-            Log::info("✅ Successfully created assignment with ID: {$assignment->id}");
-            Log::info("Assignment details: " . json_encode($assignment->toArray()));
-
-            return true;
-
-        } catch (\Exception $e) {
-            Log::error("Error in assignStudentToInstructor: " . $e->getMessage());
-            Log::error("Stack trace: " . $e->getTraceAsString());
-            return false;
-        }
-    }
-
-    /**
-     * Ensure student has a batch
-     */
-    private function ensureStudentHasBatch($student)
-    {
-        if ($student->enrolment_batch_id) {
-            return $student->enrolment_batch_id;
-        }
-
-        // Find or create active batch
-        $activeBatch = EnrolmentBatch::where('active_batch', true)->first();
-
-        if (!$activeBatch) {
-            $activeBatch = EnrolmentBatch::create([
-                'batch_name' => 'Batch ' . date('Y-m'),
-                'active_batch' => true,
-            ]);
-            Log::info("Created new batch: {$activeBatch->id}");
-        }
-
-        // Update student's batch
-        $student->update(['enrolment_batch_id' => $activeBatch->id]);
-        Log::info("Updated student {$student->id} with batch {$activeBatch->id}");
-
-        return $activeBatch->id;
-    }
-
-    /**
-     * Find the best instructor for a course (excluding admin roles)
-     */
-    private function findBestInstructor($instructorRoles, $courseId)
-    {
-        // Get all instructors with the eligible roles, excluding admin roles
-        $instructorsQuery = User::whereHas('roles', function($query) use ($instructorRoles) {
-            $query->whereIn('roles.id', $instructorRoles)
-                  ->whereNotIn('roles.id', self::EXCLUDED_ROLES); // Double-check exclusion
-        })
-        ->where('user_active', 1)
-        // Additional check to ensure no admin roles
-        ->whereDoesntHave('roles', function($query) {
-            $query->whereIn('roles.id', self::EXCLUDED_ROLES);
-        });
-
-        $allInstructors = $instructorsQuery->get();
-        Log::info("Found " . $allInstructors->count() . " teaching instructors with eligible roles");
-
-        if ($allInstructors->isEmpty()) {
-            return null;
-        }
-
-        // Log each instructor found
-        foreach ($allInstructors as $inst) {
-            $roles = $inst->roles->pluck('role_name')->join(', ');
-            Log::info("Available instructor: {$inst->id} - {$inst->firstName} {$inst->lastName} (Roles: {$roles})");
-        }
-
-        // Find instructor with least students for this course
-        $instructorLoads = [];
-        foreach ($allInstructors as $instructor) {
-            $studentCount = StudentInstructorDistribution::where('instructor_id', $instructor->id)
-                ->where('course_id', $courseId)
-                ->count();
-
-            $instructorLoads[] = [
-                'instructor' => $instructor,
-                'count' => $studentCount
-            ];
-
-            Log::info("Instructor {$instructor->id} ({$instructor->firstName} {$instructor->lastName}) has {$studentCount} students for course {$courseId}");
-        }
-
-        // Sort by student count and return the one with least students
-        usort($instructorLoads, function($a, $b) {
-            return $a['count'] <=> $b['count'];
-        });
-
-        return $instructorLoads[0]['instructor'];
-    }
-
-    /**
-     * Fallback: Assign any teaching instructor (not admin roles)
-     */
-    private function assignTeachingInstructor($studentId, $courseId)
-    {
-        try {
-            Log::info("Attempting fallback: assign any teaching instructor (excluding admin roles)");
-
-            $student = User::find($studentId);
-            if (!$student) {
-                return false;
-            }
-
-            $batchId = $this->ensureStudentHasBatch($student);
-
-            // Find any teaching instructor (roles 5-9 only)
-            $instructor = User::whereHas('roles', function($query) {
-                $query->whereIn('roles.id', self::INSTRUCTOR_ROLES);
-            })
-            ->whereDoesntHave('roles', function($query) {
-                $query->whereIn('roles.id', self::EXCLUDED_ROLES);
-            })
-            ->where('user_active', 1)
-            ->withCount(['instructorDistributions as total_students' => function($query) {
-                $query->select(DB::raw('count(distinct student_id)'));
-            }])
-            ->orderBy('total_students', 'asc')
-            ->first();
-
-            if (!$instructor) {
-                Log::error("No teaching instructors available at all!");
-                Log::error("This means no users with roles 5-9 exist in the system");
-                return false;
-            }
-
-            $roles = $instructor->roles->pluck('role_name')->join(', ');
-            Log::info("Fallback: Using instructor {$instructor->id} - {$instructor->firstName} {$instructor->lastName} (Roles: {$roles})");
-
-            StudentInstructorDistribution::create([
-                'enrolment_batch_id' => $batchId,
-                'student_id' => $studentId,
-                'instructor_id' => $instructor->id,
-                'course_id' => $courseId,
-            ]);
-
-            Log::info("✅ Fallback assignment successful");
-            return true;
-
-        } catch (\Exception $e) {
-            Log::error("Error in fallback assignment: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Assigns a list of courses to a student based on the course IDs.
-     */
-    private function assignCoursesToStudent($user, $courseObjectives)
-    {
-        try {
-            Log::info("=== Starting course assignment for student {$user->id} ===");
-            Log::info("Raw objectives type: " . gettype($courseObjectives));
-
-            if (!$courseObjectives) {
-                Log::warning("No course objectives provided");
-                return;
-            }
-
-            $courseIds = [];
-
-            // Handle Subscription model's getObjectivesAttribute which returns TrainingObjective collection
-            if ($courseObjectives instanceof \Illuminate\Database\Eloquent\Collection) {
-                Log::info("Objectives is an Eloquent Collection");
-                $courseIds = $courseObjectives->pluck('id')->toArray();
-            }
-            // Handle if it's already an array of objects
-            elseif (is_array($courseObjectives)) {
-                Log::info("Objectives is an array");
-                foreach ($courseObjectives as $item) {
-                    if (is_object($item) && isset($item->id)) {
-                        $courseIds[] = $item->id;
-                    } elseif (is_array($item) && isset($item['id'])) {
-                        $courseIds[] = $item['id'];
-                    } elseif (is_numeric($item)) {
-                        $courseIds[] = $item;
-                    }
-                }
-            }
-            // Handle JSON string
-            elseif (is_string($courseObjectives)) {
-                Log::info("Objectives is a string, attempting to decode");
-                $decoded = json_decode($courseObjectives, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $courseIds = array_filter($decoded, 'is_numeric');
-                }
-            }
-
-            $courseIds = array_unique(array_filter($courseIds));
-            Log::info("Extracted course IDs: " . json_encode($courseIds));
-
-            if (empty($courseIds)) {
-                Log::error("No valid course IDs extracted from objectives");
-                return;
-            }
-
-            $successCount = 0;
-            $failCount = 0;
-
-            foreach ($courseIds as $courseId) {
-                Log::info("Processing course ID: {$courseId}");
-
-                if ($this->assignInstructorToStudent($user->id, (int) $courseId)) {
-                    $successCount++;
-                    Log::info("✅ Successfully assigned instructor for course {$courseId}");
-                } else {
-                    $failCount++;
-                    Log::error("❌ Failed to assign instructor for course {$courseId}");
-                }
-            }
-
-            Log::info("=== Course assignment completed ===");
-            Log::info("Success: {$successCount}, Failed: {$failCount}");
-
-        } catch (\Exception $e) {
-            Log::error("Critical error in assignCoursesToStudent: " . $e->getMessage());
-            Log::error("Stack trace: " . $e->getTraceAsString());
-        }
     }
 
     /**
@@ -361,12 +26,13 @@ class CheckoutController extends Controller
     public function index()
     {
         $subscription = Subscription::where('user_id', Auth::id())->latest()->first();
-        $exchangeRate = 1535;
-        $objectives = $subscription?->objectives ?? [];
 
-        if ($subscription && $subscription->payment_status === 'completed') {
+        if (! $subscription || $subscription->isPaid()) {
             return redirect('/dashboard');
         }
+
+        $objectives = $subscription->objectives ?? [];
+        $exchangeRate = 1535;
 
         return view('checkout.pay', compact('subscription', 'objectives', 'exchangeRate'));
     }
@@ -376,170 +42,154 @@ class CheckoutController extends Controller
      */
     public function redirectToPaystack(Request $request)
     {
+        $user = Auth::user();
+        $subscription = $this->payableSubscription($user->id);
+
+        if (! $subscription) {
+            return redirect('/dashboard')->with('info', 'There is nothing left to pay on your account.');
+        }
+
+        $secretKey = $this->paystackSecret();
+        if (! $secretKey) {
+            return back()->with('error', 'Online payment is not available at the moment. Please contact the school.');
+        }
+
         try {
-            $user = Auth::user();
-            $subscription = Subscription::where('user_id', $user->id)->latest()->first();
-
-            if (!$subscription) {
-                return back()->with('error', 'No subscription found.');
-            }
-
-            $amount = $subscription->total_amount * 100; // Convert to kobo
-
-            $paystackSettings = PaymentGatewayConfig::where('name', 'Paystack')->first();
-            if (!$paystackSettings) {
-                return back()->with('error', 'Paystack configuration not found.');
-            }
-
-            config([
-                'paystack.publicKey' => $paystackSettings->public_key,
-                'paystack.secretKey' => Crypt::decryptString($paystackSettings->secret_key),
-                'paystack.paymentUrl' => 'https://api.paystack.co',
-                'paystack.merchantEmail' => $paystackSettings->merchant_email,
-            ]);
-
-            $data = [
+            $response = Http::withToken($secretKey)->acceptJson()->post(self::PAYSTACK_API . '/transaction/initialize', [
                 'email' => $user->email,
-                'amount' => $amount,
+                'amount' => $subscription->amountInKobo(),
+                'currency' => 'NGN',
+                'reference' => 'BRG-' . $subscription->id . '-' . Str::upper(Str::random(10)),
                 'callback_url' => route('payment.callback'),
-                'reference' => app(\Unicodeveloper\Paystack\Paystack::class)->genTranxRef(),
                 'metadata' => [
                     'user_id' => $user->id,
                     'subscription_id' => $subscription->id,
                 ],
-            ];
+            ]);
 
-            return app(\Unicodeveloper\Paystack\Paystack::class)->getAuthorizationUrl($data)->redirectNow();
-        } catch (\Exception $e) {
+            $url = $response->json('data.authorization_url');
+
+            if (! $response->successful() || ! $url) {
+                throw new \RuntimeException('Paystack initialize failed: ' . $response->body());
+            }
+
+            return redirect()->away($url);
+        } catch (\Throwable $e) {
             Log::error('Paystack initialization error: ' . $e->getMessage());
-            return back()->with('error', 'Payment initialization failed. Please try again.');
+
+            return back()->with('error', 'We could not start the payment. Please try again.');
         }
     }
 
     /**
-     * Handles the callback from Paystack and verifies the transaction.
+     * Paystack redirects the payer here after paying.
      */
     public function handleGatewayCallback(Request $request)
     {
-        $reference = $request->query('reference');
+        $reference = (string) $request->query('reference');
 
-        if (!$reference) {
-            return redirect('/dashboard')->with('error', 'No payment reference provided.');
+        if ($reference === '') {
+            return redirect()->route('checkout.pay')->with('error', 'No payment reference was provided.');
         }
 
-        $user = Auth::user();
-        $subscription = Subscription::where('user_id', $user->id)->latest()->first();
+        $result = $this->verifyAndComplete($reference, Auth::id());
 
-        if (!$subscription) {
-            return redirect('/dashboard')->with('error', 'Subscription not found.');
+        if ($result === true) {
+            return redirect('/dashboard')->with('success', 'Payment successful! Welcome to BigRig — your courses and instructors are now available.');
         }
 
-        $paystackSettings = PaymentGatewayConfig::where('name', 'Paystack')->first();
-        if (!$paystackSettings) {
-            return redirect('/dashboard')->with('error', 'Paystack settings not found.');
+        return redirect()->route('checkout.pay')->with('error', $result);
+    }
+
+    /**
+     * Server-to-server notification from Paystack, so payments are recorded even
+     * if the payer never returns to the site.
+     */
+    public function webhook(Request $request)
+    {
+        $secretKey = $this->paystackSecret();
+        $signature = (string) $request->header('x-paystack-signature');
+
+        if (! $secretKey || ! hash_equals(hash_hmac('sha512', $request->getContent(), $secretKey), $signature)) {
+            return response('Invalid signature', 401);
         }
 
-        $secretKey = Crypt::decryptString($paystackSettings->secret_key);
+        if ($request->input('event') === 'charge.success') {
+            $this->verifyAndComplete((string) $request->input('data.reference'));
+        }
+
+        return response('OK');
+    }
+
+    /**
+     * Verify a transaction with Paystack and enrol the student when it checks out.
+     *
+     * @return true|string true on success, otherwise a message for the payer
+     */
+    private function verifyAndComplete(string $reference, ?int $expectedUserId = null): bool|string
+    {
+        $secretKey = $this->paystackSecret();
+        if (! $secretKey) {
+            return 'Payment verification is not available at the moment. Please contact the school.';
+        }
 
         try {
-            $client = new Client();
-            $response = $client->get("https://api.paystack.co/transaction/verify/{$reference}", [
-                'headers' => [
-                    'Authorization' => "Bearer {$secretKey}",
-                    'Accept' => 'application/json',
-                ],
-            ]);
+            $data = Http::withToken($secretKey)->acceptJson()
+                ->get(self::PAYSTACK_API . '/transaction/verify/' . rawurlencode($reference))
+                ->json('data');
+        } catch (\Throwable $e) {
+            Log::error("Paystack verification error for {$reference}: " . $e->getMessage());
 
-            $paymentDetails = json_decode($response->getBody(), true);
+            return 'We could not confirm your payment yet. If you were charged, it will be confirmed shortly — otherwise please try again.';
+        }
 
-            if ($paymentDetails['status'] && $paymentDetails['data']['status'] === 'success') {
-                DB::beginTransaction();
+        if (($data['status'] ?? null) !== 'success') {
+            return 'The payment was not completed. Please try again.';
+        }
 
-                try {
-                    // Update subscription for pending payment
-                    if ($subscription->payment_status === 'pending') {
-                        $subscription->update([
-                            'payment_status' => 'completed',
-                            'payment_reference' => $paymentDetails['data']['reference'],
-                            'payment_method' => 'Paystack',
-                        ]);
+        $subscription = Subscription::find($data['metadata']['subscription_id'] ?? null);
 
-                        $user->update(['user_active' => true]);
+        $problem = match (true) {
+            ! $subscription => 'subscription not found',
+            $expectedUserId !== null && $subscription->user_id !== $expectedUserId => 'subscription belongs to another user',
+            (int) ($data['metadata']['user_id'] ?? 0) !== $subscription->user_id => 'metadata user mismatch',
+            strtoupper($data['currency'] ?? '') !== 'NGN' => 'unexpected currency',
+            (int) ($data['amount'] ?? 0) < $subscription->amountInKobo() => 'amount paid is less than amount due',
+            Subscription::where('payment_reference', $reference)->where('id', '!=', $subscription->id)->exists() => 'reference already used',
+            default => null,
+        };
 
-                        // Log the objectives for debugging
-                        Log::info("Processing courses for student {$user->id}. Objectives: " . json_encode($subscription->objectives));
+        if ($problem) {
+            Log::warning("Rejected Paystack payment {$reference}: {$problem}.", ['subscription_id' => $subscription?->id]);
 
-                        $this->assignCoursesToStudent($user, $subscription->objectives);
-                    }
-                    // Handle retry for failed payment
-                    elseif ($subscription->payment_status === 'failed') {
-                        $objectives = is_string($subscription->objectives)
-                            ? $subscription->objectives
-                            : json_encode(collect($subscription->objectives)->pluck('id')->toArray());
+            return 'We could not match this payment to your application. Please contact the school with your payment reference: ' . $reference;
+        }
 
-                        $newSubscription = Subscription::create([
-                            'user_id' => $user->id,
-                            'payment_reference' => $paymentDetails['data']['reference'],
-                            'objectives' => $objectives,
-                            'subtotal' => $subscription->subtotal,
-                            'tax' => $subscription->tax,
-                            'total_amount' => $subscription->total_amount,
-                            'payment_status' => 'completed',
-                            'payment_method' => 'Paystack',
-                        ]);
+        if (! $subscription->isPaid()) {
+            $this->enrolment->completePayment($subscription, $reference, 'Paystack');
+        }
 
-                        $user->update(['user_active' => true]);
+        return true;
+    }
 
-                        Log::info("Processing courses for student {$user->id} (retry). Objectives: " . json_encode($newSubscription->objectives));
+    private function payableSubscription(int $userId): ?Subscription
+    {
+        return Subscription::where('user_id', $userId)
+            ->whereIn('payment_status', ['pending', 'failed'])
+            ->latest()
+            ->first();
+    }
 
-                        $this->assignCoursesToStudent($user, $newSubscription->objectives);
-                    }
+    private function paystackSecret(): ?string
+    {
+        $config = PaymentGatewayConfig::where('name', 'Paystack')->first();
 
-                    DB::commit();
+        try {
+            return $config?->secret_key ? Crypt::decryptString($config->secret_key) : null;
+        } catch (\Throwable $e) {
+            Log::error('Paystack secret key could not be decrypted: ' . $e->getMessage());
 
-                    // Redirect based on user role
-                    if ($user->hasRole('student')) {
-                        return redirect()->route('student.dashboard')
-                            ->with('success', 'Payment successful! You have been enrolled in your courses.');
-                    }
-
-                    // Check if email verification is needed
-                    if (!$user->hasVerifiedEmail()) {
-                        return redirect('/email/verify')
-                            ->with('success', 'Payment successful! Please verify your email.');
-                    }
-
-                    return redirect('/dashboard')
-                        ->with('success', 'Payment successful! You have been enrolled.');
-
-                } catch (\Exception $e) {
-                    DB::rollback();
-                    Log::error('Error processing successful payment: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-
-                    // Payment was successful but enrollment failed - still redirect to dashboard
-                    return redirect('/dashboard')
-                        ->with('warning', 'Payment successful but enrollment pending. Please contact support.');
-                }
-            }
-
-            throw new \Exception('Payment not successful.');
-
-        } catch (\Exception $e) {
-            Log::error('Payment verification error: ' . $e->getMessage());
-
-            // Update subscription status to failed
-            if ($subscription && $subscription->payment_reference === null) {
-                $subscription->update([
-                    'payment_status' => 'failed',
-                    'payment_reference' => $reference,
-                    'payment_method' => 'Paystack',
-                ]);
-            }
-
-            $user->update(['user_active' => false]);
-
-            return redirect('/dashboard')
-                ->with('error', 'Payment verification failed. Please try again or contact support.');
+            return null;
         }
     }
 }

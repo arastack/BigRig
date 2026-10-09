@@ -13,6 +13,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.8",
         "livewire/livewire": "^3.6",
+        "symfony/html-sanitizer": "^7.3",
         "unicodeveloper/laravel-paystack": "^1.2"
     },
     "require-dev": {
@@ -29,7 +30,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Support/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

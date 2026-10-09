@@ -36,7 +36,7 @@
                                 <a class="inline-flex mb-2" href="javascript:void(0)">
                                     <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ $achievement->title }}</h3>
                                 </a>
-                                <div class="text-sm">{!! $achievement->description !!}</div>
+                                <div class="text-sm">{!! clean_html($achievement->description) !!}</div>
                             </div>
                             <!-- Footer -->
                             <div class="flex justify-between items-center mt-3">

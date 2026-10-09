@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\DataFeed;
 use App\Models\User;
 use App\Models\Subscription;
 use App\Models\TrainingObjective;
@@ -21,29 +20,17 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->hasRole('student')) {
+        if ($user->isStudent()) {
             return redirect()->route('student.dashboard');
-        } elseif ($user->hasRole([
-            'lead instructor',
-            'cmv instructor',
-            'mv instructor',
-            'forklift instructor',
-            'defensive driving instructor',
-            'safety and compliance instructor',
-            'hazmat instructor'
-        ])) {
-            return redirect()->route('instructor.dashboard');
         }
 
-        // Check subscription payment status
-        $subscription = Subscription::where('user_id', $user->id)->first();
+        if ($user->portal() !== 'admin') {
+            if ($user->isInstructor()) {
+                return redirect()->route('instructor.dashboard');
+            }
 
-        if ($subscription && $subscription->payment_status === 'pending') {
-            // Redirect to checkout/pay if payment is still pending
-            return redirect('/checkout/pay');
+            abort(403, 'Your account has no role assigned yet. Please contact the school.');
         }
-
-        $dataFeed = new DataFeed();
 
         // Get the number of active users
         $activeStudents = User::where('user_active', 1)

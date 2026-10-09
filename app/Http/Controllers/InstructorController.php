@@ -7,6 +7,8 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class InstructorController extends Controller
 {
@@ -60,6 +62,19 @@ class InstructorController extends Controller
             'profile_photo' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
         ]);
 
+        $roles = Role::whereIn('id', $request->input('userRole'))->get();
+
+        if ($roles->contains(fn ($role) => $role->portal === Role::PORTAL_STUDENT)) {
+            return redirect()->back()->withInput()->with('error', 'Staff accounts cannot be given the Student role.');
+        }
+
+        if ($roles->contains(fn ($role) => $role->isSuperAdmin()) && ! Auth::user()->isSuperAdmin()) {
+            abort(403, 'Only a SuperAdmin can create another SuperAdmin.');
+        }
+
+        // A unique temporary password, shown once to the admin, replaces the old shared default.
+        $temporaryPassword = Str::password(12, symbols: false);
+
         $filePath = null;
 
         if ($request->hasFile('profile_photo')) {
@@ -74,7 +89,7 @@ class InstructorController extends Controller
             'gender' => $request->input('gender'),
             'mobileNumber' => $request->input('mobileNumber'),
             'email' => $request->input('email'),
-            'password' => Hash::make('12345678'),
+            'password' => Hash::make($temporaryPassword),
             'profile_photo_path' => $filePath,
             'user_active' => 1,
         ]);
@@ -82,7 +97,14 @@ class InstructorController extends Controller
         // Attach roles using the pivot table
         $user->roles()->attach($request->input('userRole'));
 
-        return redirect()->back()->with('success', 'Instructor created successfully.');
+        // Best effort: also email a link to choose their own password.
+        try {
+            Password::sendResetLink(['email' => $user->email]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return redirect()->back()->with('success', "Account created for {$user->firstName}. Temporary password: {$temporaryPassword} — share it securely; they should change it after signing in.");
     }
 
     /**

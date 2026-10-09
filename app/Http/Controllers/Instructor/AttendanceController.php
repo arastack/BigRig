@@ -136,6 +136,16 @@ class AttendanceController extends Controller
             abort(403, 'Unauthorized access to this schedule.');
         }
 
+        // Only students this instructor teaches on this course can be marked
+        $allowedStudentIds = StudentInstructorDistribution::where('instructor_id', $instructor->id)
+            ->where('course_id', $schedule->course_id)
+            ->pluck('student_id')
+            ->all();
+        $submittedIds = collect($request->attendance)->pluck('student_id')->map(fn ($id) => (int) $id);
+        if ($submittedIds->diff($allowedStudentIds)->isNotEmpty()) {
+            abort(403, 'Attendance can only be recorded for your own students.');
+        }
+
         DB::beginTransaction();
         try {
             foreach ($request->attendance as $record) {

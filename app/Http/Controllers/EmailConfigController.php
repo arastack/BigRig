@@ -63,7 +63,7 @@ class EmailConfigController extends Controller
             'from_name'       => 'required|string|max:255',
             'from_email'      => 'required|email|max:255',
             'smtp_username'   => 'required|string|max:255',
-            'smtp_password'   => 'required|string|max:255',
+            'smtp_password'   => 'nullable|string|max:255',
             'smtp_host'       => 'required|string|max:255',
             'smtp_port'       => 'required|integer|between:1,65535',
             'smtp_encryption' => 'nullable|string|in:ssl,tls,starttls',
@@ -78,7 +78,12 @@ class EmailConfigController extends Controller
         $emailConfig->from_name = $request->from_name;
         $emailConfig->from_email = $request->from_email;
         $emailConfig->smtp_username = $request->smtp_username;
-        $emailConfig->smtp_password = Crypt::encryptString($request->smtp_password);
+        // A blank password keeps the stored one
+        if (filled($request->smtp_password)) {
+            $emailConfig->smtp_password = Crypt::encryptString($request->smtp_password);
+        } elseif (! $emailConfig->smtp_password) {
+            return redirect()->back()->withInput()->withErrors(['smtp_password' => 'Enter the SMTP password.']);
+        }
         $emailConfig->smtp_host = $request->smtp_host;
         $emailConfig->smtp_port = $request->smtp_port;
         $emailConfig->smtp_encryption = $request->smtp_encryption;

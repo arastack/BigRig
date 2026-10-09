@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\StudentAttendance;
+
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\TrainingObjective;
@@ -235,6 +237,14 @@ class TrainingScheduleController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $schedule = TrainingSchedule::findOrFail($id);
+
+        if (StudentAttendance::where('schedule_id', $schedule->id)->exists()) {
+            return redirect()->back()->with('error', 'This session already has attendance recorded and cannot be deleted.');
+        }
+
+        $schedule->delete();
+
+        return redirect()->back()->with('success', 'Training session deleted.');
     }
 }

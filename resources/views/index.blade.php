@@ -418,7 +418,7 @@
                     <h2>{{ $settings->commence_year }}</h2>
                 </div>
                 <div class="inner-box">
-                    {!! $about->mission_statement !!}
+                    {!! clean_html($about->mission_statement) !!}
                     <div class="inner">
                         <div class="icon-box"><i class="flaticon-clock"></i></div>
                         <div class="count-outer count-box">
@@ -1136,7 +1136,7 @@
                                             <div class="shape-layer"></div>
                                             <div class="quote-box"><i class="flaticon-quote"></i></div>
                                             {{-- <h4>This is the best Driving School.</h4> --}}
-                                            <p>{!! $testimonial->testimony !!}</p>
+                                            <p>{!! clean_html($testimonial->testimony) !!}</p>
                                         </div>
                                         <div class="author-box">
                                             <h5>{{ $testimonial->full_name }}</h5>

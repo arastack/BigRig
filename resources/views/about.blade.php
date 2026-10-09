@@ -49,7 +49,7 @@
                             </div>
                             <div class="inner">
                                 <div class="text">
-                                    {!! $about->company_history !!}
+                                    {!! clean_html($about->company_history) !!}
                                 </div>
                                 {{-- <ul class="link-box clearfix">
                                     <li><a href="javascript:void(0)">Brief History</a></li>
@@ -137,7 +137,7 @@
                                     <div class="inner">
                                         <h2>{{ $achievement->year }}</h2>
                                         <h4>{{ $achievement->title }}</h4>
-                                        <p>{!! $achievement->description !!}</p>
+                                        <p>{!! clean_html($achievement->description) !!}</p>
                                     </div>
                                 </div>
                             @endforeach

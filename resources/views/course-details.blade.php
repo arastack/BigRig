@@ -30,7 +30,7 @@
                             <h2>Course details</h2>
                         </div>
                         <div class="text">
-                            {!! $course->course_details !!}
+                            {!! clean_html($course->course_details) !!}
                         </div>
                         <div class="btn-box">
                             <a href="{{ route('register') }}" class="theme-btn btn-five">Enrol Now</a>
@@ -147,7 +147,7 @@
                     </header>
                     <p class="mb-3">For you to be eligible for enrollment for this course at BigRig International Truck Driving School:</p>
                     <div class="course-requirement text-inner">
-                        {!! $course->requirement !!}
+                        {!! clean_html($course->requirement) !!}
                     </div>
                 </div>
             </div>

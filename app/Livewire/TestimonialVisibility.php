@@ -18,6 +18,8 @@ class TestimonialVisibility extends Component
 
     public function updatedWebsiteVisibility()
     {
+        abort_unless(auth()->user()?->hasPermission('update_testimonials'), 403);
+
         $this->validate([
             'website_visibility' => 'boolean'
         ]);

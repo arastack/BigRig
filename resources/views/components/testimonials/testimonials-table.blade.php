@@ -71,7 +71,7 @@
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-normal break-words">
                                     <div class="flex items-center">
-                                        <div class="text-left">{!! $testimonial->testimony !!}</div>
+                                        <div class="text-left">{!! clean_html($testimonial->testimony) !!}</div>
                                     </div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
@@ -95,7 +95,7 @@
                                                     id: {{ $testimonial->id }},
                                                     full_name: '{{ $testimonial->full_name }}',
                                                     rating: '{{ $testimonial->rating }}',
-                                                    testimony: '{!! $testimonial->testimony !!}',
+                                                    testimony: @js(clean_html($testimonial->testimony)),
                                                 })" class="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600">
                                                     <svg class="fill-current text-gray-400 dark:text-gray-500 shrink-0" width="16" height="16" viewBox="0 0 16 16">
                                                         <path d="M11.7.3c-.4-.4-1-.4-1.4 0l-10 10c-.2.2-.3.4-.3.7v4c0 .6.4 1 1 1h4c.3 0 .5-.1.7-.3l10-10c.4-.4.4-1 0-1.4l-4-4zM4.6 14H2v-2.6l6-6L10.6 8l-6 6zM12 6.6L9.4 4 11 2.4 13.6 5 12 6.6z" />

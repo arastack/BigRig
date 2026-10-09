@@ -12,18 +12,6 @@
                 <form action="{{ route('email-config.update') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
-                        @php
-                            use Illuminate\Support\Facades\Crypt;
-
-                            $decryptedPassword = '';
-                            if (!empty($emailConfig?->smtp_password)) {
-                                try {
-                                    $decryptedPassword = Crypt::decryptString($emailConfig->smtp_password);
-                                } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
-                                    $decryptedPassword = '';
-                                }
-                            }
-                        @endphp
 
                         <div class="space-y-3">
                             <div class="flex items-center gap-2">
@@ -50,7 +38,7 @@
                             <div class="flex items-center gap-2">
                                 <div class="w-full">
                                     <label class="text-sm font-medium mb-1" for="smtp_password">SMTP Password <span class="text-red-500">*</span></label>
-                                    <input id="smtp_password" class="form-input w-full" type="password" value="{{ $decryptedPassword }}" name="smtp_password" required />
+                                    <input id="smtp_password" class="form-input w-full" type="password" value="" name="smtp_password" autocomplete="new-password" placeholder="{{ filled($emailConfig?->smtp_password) ? '•••••••• stored — leave blank to keep' : 'Enter SMTP password' }}" @if (blank($emailConfig?->smtp_password)) required @endif />
                                 </div>
                             </div>
 

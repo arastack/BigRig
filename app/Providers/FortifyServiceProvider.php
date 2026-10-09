@@ -2,13 +2,15 @@
 
 namespace App\Providers;
 
-use App\Models\Subscription;
+use App\Models\User;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -31,18 +33,12 @@ class FortifyServiceProvider extends ServiceProvider
             {
                 $user = Auth::user();
 
-                // Check subscription payment status
-                $subscription = Subscription::where('user_id', $user->id)->latest()->first();
-
-                if ($subscription && $subscription->payment_status !== 'completed') {
-                    // Redirect to checkout/pay if payment is still pending or failed
-                    return redirect('/checkout/pay');
-                } else if (!$user->hasVerifiedEmail()) {
-                    return redirect('/email/verify');
+                // Applicants who have not paid yet continue where they left off.
+                if ($user->isStudent() && ! $user->hasCompletedPayment()) {
+                    return redirect()->route('checkout.pay');
                 }
 
-                // Otherwise, redirect to dashboard
-                return redirect('/dashboard');
+                return redirect()->intended('/dashboard');
             }
         });
 
@@ -72,6 +68,22 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
+
+        Fortify::authenticateUsing(function (Request $request) {
+            $user = User::where('email', $request->input(Fortify::username()))->first();
+
+            if (! $user || ! Hash::check($request->input('password'), $user->password)) {
+                return null;
+            }
+
+            if ($user->isSuspended()) {
+                throw ValidationException::withMessages([
+                    Fortify::username() => 'Your account has been suspended. Please contact the school.',
+                ]);
+            }
+
+            return $user;
+        });
 
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());

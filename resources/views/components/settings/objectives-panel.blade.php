@@ -58,7 +58,7 @@
                                     <div class="text-xs text-gray-800 dark:text-gray-100 font-semibold uppercase mb-4">{{ $objective->duration }} weeks training period</div>
                                     <!-- List -->
                                     <div class="course-requirements">
-                                        {!! $objective->requirement !!}
+                                        {!! clean_html($objective->requirement) !!}
                                     </div>
                                 </div>
                             </div>
@@ -75,7 +75,7 @@
                                             theory_session: '{{ $objective->theory_session }}',
                                             practical_session: '{{ $objective->practical_session }}',
                                             examination: '{{ $objective->examination }}',
-                                            requirements: `{!! $objective->requirement !!}`,
+                                            requirements: @js(clean_html($objective->requirement)),
                                             video_url: '{{ $objective->video_url }}'
                                         })" 
                                         aria-controls="edit-modal">

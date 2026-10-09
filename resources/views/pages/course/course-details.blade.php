@@ -58,7 +58,7 @@
                             <div class="items-start"> 
                                 <p class="mb-3">For you to be eligible for enrollment for this course at BigRig International Truck Driving School:</p>                             
                                 <div class="course-details space-y-6">
-                                    {!! $objective->requirement !!}
+                                    {!! clean_html($objective->requirement) !!}
                                 </div>
                             </div>
                         </div>
@@ -85,7 +85,7 @@
                         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Course Details</h2>
                     </header>
                     <div class="course-details space-y-6">
-                        {!! $objective->course_details !!}
+                        {!! clean_html($objective->course_details) !!}
                     </div>
                 </div>
 

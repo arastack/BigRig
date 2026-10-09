@@ -18,7 +18,7 @@
                         </div>
                         <div class="content-box">
                             <h4>About Us</h4>
-                            {!! $about->mission_statement !!}
+                            {!! clean_html($about->mission_statement) !!}
                             <a href="{{url('about')}}" class="theme-btn btn-one">About Us</a>
                         </div>
                         <div class="contact-info">

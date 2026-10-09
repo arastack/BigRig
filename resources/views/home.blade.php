@@ -75,7 +75,7 @@
                                     <h6>Since</h6>
                                     <h2>{{ $settings->commence_year }}</h2>
                                     <div class="text">
-                                        <p>{!! optional($founder)->speech_content !!}</p>
+                                        <p>{!! clean_html(optional($founder)->speech_content) !!}</p>
                                     </div>
     
                                     @if (optional($founder)->show_founder)
@@ -515,7 +515,7 @@
                                                 @endfor --}}
                                             </ul>
                                             {{-- <h4>This is the Best Driving <br />School in City.</h4> --}}
-                                            <p>{!! $testimonial->testimony !!}</p>
+                                            <p>{!! clean_html($testimonial->testimony) !!}</p>
                                             <div class="author-box">
                                                 <figure class="author-thumb"><img src="{{ $testimonial->image_url ? Storage::url($testimonial->image_url) : Storage::url('users/avatar.png') }}" width="40" height="40" alt="{{ $testimonial->full_name }}"></figure>
                                                 <h4>{{ $testimonial->full_name }}</h4>

@@ -32,6 +32,14 @@ class RoleController extends Controller
     {
         $role = Role::findOrFail($id);
 
+        if ($role->isProtected()) {
+            return redirect()->back()->with('error', "The {$role->role_name} role is required by the system and cannot be deleted.");
+        }
+
+        if ($role->users()->exists()) {
+            return redirect()->back()->with('error', "Reassign the users who hold the {$role->role_name} role before deleting it.");
+        }
+
         // Delete related role_permissions before deleting the role
         $role->rolePermissions()->delete();
 

@@ -18,6 +18,8 @@ class WebsiteVisibility extends Component
 
     public function updatedWebsiteVisibility()
     {
+        abort_unless(auth()->user()?->hasPermission('update_instructors'), 403);
+
         $this->validate([
             'website_visibility' => 'boolean'
         ]);

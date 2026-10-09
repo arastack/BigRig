@@ -34,8 +34,14 @@ class User extends Authenticatable
         'password',
         'profile_photo_path',
         'user_active',
+        'suspended_at',
         'website_visibility'
     ];
+
+    /**
+     * Per-request cache of permission names, so menus and gates don't re-query.
+     */
+    protected ?array $cachedPermissionNames = null;
 
     /**
      * The attributes that should be hidden for serialization.
@@ -56,6 +62,8 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'suspended_at' => 'datetime',
+        'user_active' => 'boolean',
     ];
 
     /**
@@ -93,36 +101,99 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class);
     }
 
-    public function permissions()
+    /**
+     * Roles, loaded once per request.
+     */
+    protected function loadedRoles()
     {
-        return $this->hasManyThrough(Permission::class, Role::class, 'id', 'id', null, null)
-            ->withPivot('role_id')
-            ->distinct();
-    }
-
-    public function hasPermission($permission)
-    {
-        return $this->roles()
-            ->with('permissions')
-            ->get()
-            ->pluck('permissions')
-            ->flatten()
-            ->pluck('name') // or 'slug', whatever you use
-            ->contains($permission);
-    }
-
-    public function hasRole($role)
-    {
-        $roles = $this->roles()->pluck('role_name')->map(function ($r) {
-            return strtolower($r);
-        });
-
-        if (is_array($role)) {
-            $role = array_map('strtolower', $role);
-            return $roles->intersect($role)->isNotEmpty();
+        if (! $this->relationLoaded('roles')) {
+            $this->load('roles');
         }
 
-        return $roles->contains(strtolower($role));
+        return $this->roles;
+    }
+
+    public function permissionNames(): array
+    {
+        if ($this->cachedPermissionNames === null) {
+            $this->cachedPermissionNames = Permission::query()
+                ->join('role_permission', 'permissions.id', '=', 'role_permission.permission_id')
+                ->whereIn('role_permission.role_id', $this->loadedRoles()->pluck('id'))
+                ->distinct()
+                ->pluck('permissions.name')
+                ->all();
+        }
+
+        return $this->cachedPermissionNames;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->loadedRoles()->contains(fn ($role) => strcasecmp($role->role_name, Role::SUPER_ADMIN) === 0);
+    }
+
+    public function hasPermission($permission): bool
+    {
+        return $this->isSuperAdmin() || in_array($permission, $this->permissionNames(), true);
+    }
+
+    public function hasAnyPermission(array $permissions): bool
+    {
+        return collect($permissions)->contains(fn ($permission) => $this->hasPermission($permission));
+    }
+
+    public function hasRole($role): bool
+    {
+        $roles = $this->loadedRoles()->pluck('role_name')->map(fn ($r) => strtolower($r));
+        $wanted = array_map('strtolower', (array) $role);
+
+        return $roles->intersect($wanted)->isNotEmpty();
+    }
+
+    /**
+     * The portal this user lands in: admin outranks instructor, which outranks student.
+     */
+    public function portal(): ?string
+    {
+        $portals = $this->loadedRoles()->pluck('portal');
+
+        foreach ([Role::PORTAL_ADMIN, Role::PORTAL_INSTRUCTOR, Role::PORTAL_STUDENT] as $portal) {
+            if ($portals->contains($portal)) {
+                return $portal;
+            }
+        }
+
+        return null;
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->portal() === Role::PORTAL_STUDENT;
+    }
+
+    public function isInstructor(): bool
+    {
+        return $this->loadedRoles()->contains('portal', Role::PORTAL_INSTRUCTOR);
+    }
+
+    public function isStaff(): bool
+    {
+        return in_array($this->portal(), [Role::PORTAL_ADMIN, Role::PORTAL_INSTRUCTOR], true);
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->suspended_at !== null;
+    }
+
+    public function hasCompletedPayment(): bool
+    {
+        return $this->subscriptions()->where('payment_status', 'completed')->exists();
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return trim(collect([$this->firstName, $this->middleName, $this->lastName])->filter()->implode(' '));
     }
 
     public function forumPosts()
@@ -145,8 +216,7 @@ class User extends Authenticatable
      */
     public function isTeachingInstructor()
     {
-        $teachingRoles = [5, 6, 7, 8, 9]; // MV, CMV, Forklift, Defensive, Safety instructors
-        return $this->roles()->whereIn('roles.id', $teachingRoles)->exists();
+        return $this->isInstructor();
     }
 
     /**
@@ -154,8 +224,7 @@ class User extends Authenticatable
      */
     public function isAdministrative()
     {
-        $adminRoles = [1, 2, 3, 4]; // SuperAdmin, IT Consultant, Admin, Lead Instructor
-        return $this->roles()->whereIn('roles.id', $adminRoles)->exists();
+        return $this->portal() === Role::PORTAL_ADMIN;
     }
 
     /**

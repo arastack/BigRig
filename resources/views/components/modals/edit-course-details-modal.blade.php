@@ -49,7 +49,7 @@
                         <input type="hidden" x-model="$store.updateCourseDetails.data.id" name="id">
                         <div>                                
                             <label class="block text-sm font-bold mb-1" for="feedback">Give the details of the course</label>
-                            <textarea name="course_details" class="form-textarea w-full px-2 py-1" id="editor" rows="50" cols="80">{!! $objective->course_details !!}</textarea>
+                            <textarea name="course_details" class="form-textarea w-full px-2 py-1" id="editor" rows="50" cols="80">{!! clean_html($objective->course_details) !!}</textarea>
                         </div>
                     </div>
                 </div>

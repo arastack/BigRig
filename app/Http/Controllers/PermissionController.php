@@ -83,11 +83,23 @@ class PermissionController extends Controller
     public function permissionUpdate(Request $request)
     {
         $request->validate([
-            'role_id' => 'required|integer',
-            'permission_id' => 'required|integer',
-            'action' => 'required|string|in:create,read,update,delete',
+            'role_id' => 'required|integer|exists:roles,id',
+            'permission_id' => 'required|integer|exists:permissions,id',
+            'action' => 'nullable|string',
             'checked' => 'required|boolean',
         ]);
+
+        $role = Role::findOrFail($request->role_id);
+        $actor = $request->user();
+
+        if ($role->isSuperAdmin()) {
+            return response()->json(['success' => false, 'message' => 'SuperAdmin always has every permission.'], 422);
+        }
+
+        // Prevent self-escalation: only a SuperAdmin may change the permissions of a role they hold.
+        if (! $actor->isSuperAdmin() && $actor->roles->contains('id', $role->id)) {
+            return response()->json(['success' => false, 'message' => 'You cannot change permissions for your own role.'], 403);
+        }
 
         $roleId = $request->role_id;
         $permissionId = $request->permission_id;

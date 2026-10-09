@@ -45,6 +45,33 @@ class Subscription extends Model
     }
 
 
+    /**
+     * The selected course ids. The column holds JSON that older records encoded twice.
+     */
+    public function objectiveIds(): array
+    {
+        $ids = json_decode($this->attributes['objectives'] ?? '[]', true);
+
+        if (is_string($ids)) {
+            $ids = json_decode($ids, true);
+        }
+
+        return array_values(array_unique(array_map('intval', Arr::flatten((array) $ids))));
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->payment_status === 'completed';
+    }
+
+    /**
+     * Amount due in the smallest currency unit (kobo), as payment gateways expect.
+     */
+    public function amountInKobo(): int
+    {
+        return (int) round($this->total_amount * 100);
+    }
+
     public function course()
     {
         return $this->belongsTo(TrainingObjective::class, 'course_id');

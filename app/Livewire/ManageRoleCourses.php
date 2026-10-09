@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use App\Models\TrainingObjective;
 use App\Models\Role;
@@ -9,6 +10,7 @@ use App\Models\RoleCourse;
 
 class ManageRoleCourses extends Component
 {
+    #[Locked]
     public $roleId;
     public $selectedCourses = [];
 
@@ -22,6 +24,9 @@ class ManageRoleCourses extends Component
 
     public function toggleCourse($courseId)
     {
+        abort_unless(auth()->user()?->hasPermission('update_role_course_permission'), 403);
+        abort_unless(TrainingObjective::whereKey($courseId)->exists(), 404);
+
         if (in_array($courseId, $this->selectedCourses)) {
             RoleCourse::where('role_id', $this->roleId)->where('course_id', $courseId)->delete();
         } else {

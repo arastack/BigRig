@@ -51,7 +51,7 @@
                             <img class="rounded-sm block mb-4 sm:mb-0 mr-5 shrink-0" src="{{ Storage::url($course->image_url) }}" width="200" height="142" alt="{{ $course->objective }}" />
                             <div class="grow">
                                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">{{ $course->objective }}</h3>
-                                <div class="text-sm mb-2">{!! $course->requirement !!}</div>
+                                <div class="text-sm mb-2">{!! clean_html($course->requirement) !!}</div>
                                 <!-- Product meta -->
                                 <div class="flex flex-wrap justify-between items-center">
                                     <!-- Rating and price -->
