@@ -5,7 +5,7 @@
 @endif
 @if ($errors->any() && ($summary ?? true))
     <div class="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
-        <p class="font-semibold">Please fix the following:</p>
+        <p class="font-semibold">{{ page_text('auth_pages.errors') }}</p>
         <ul class="mt-1 list-inside list-disc space-y-0.5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
     </div>
 @endif

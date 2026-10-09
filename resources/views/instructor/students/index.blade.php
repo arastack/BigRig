@@ -113,12 +113,12 @@
                                         <div class="flex-1">
                                             <div class="flex items-center">
                                                 <span class="text-sm font-semibold
-                                                    {{ $student->attendance_rate >= 75 ? 'text-green-600' : 'text-red-600' }}">
+                                                    {{ $student->attendance_rate >= \App\Support\AdmissionSettings::attendanceThreshold() ? 'text-green-600' : 'text-red-600' }}">
                                                     {{ $student->attendance_rate }}%
                                                 </span>
                                             </div>
                                             <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                                                <div class="h-1.5 rounded-full {{ $student->attendance_rate >= 75 ? 'bg-green-600' : 'bg-red-600' }}"
+                                                <div class="h-1.5 rounded-full {{ $student->attendance_rate >= \App\Support\AdmissionSettings::attendanceThreshold() ? 'bg-green-600' : 'bg-red-600' }}"
                                                      style="width: {{ $student->attendance_rate }}%"></div>
                                             </div>
                                         </div>
@@ -128,7 +128,7 @@
                                     {{ $student->classes_attended }}/{{ $student->total_classes }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($student->attendance_rate >= 75)
+                                    @if($student->attendance_rate >= \App\Support\AdmissionSettings::attendanceThreshold())
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                             Good
                                         </span>

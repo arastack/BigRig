@@ -10,13 +10,15 @@
             <a href="{{ route('index') }}" target="_blank" rel="noopener" class="btn-ghost btn-sm"><x-site.icon name="external" class="h-4 w-4" /> Open website</a>
         </x-slot:actions>
 
-        <form method="POST" action="{{ route('admin.page-text.update') }}" x-data="{ tab: @js($active) }">
+        <form method="POST" action="{{ route('admin.page-text.update') }}" x-data="{ tab: @js($active) }"
+              @submit="$el.querySelectorAll('[role=tabpanel]').forEach(panel => { if (panel.id !== 'panel-' + tab) panel.querySelectorAll('input, textarea, select').forEach(field => field.disabled = true) })">
+            {{-- Only the open tab is submitted, keeping each save far below PHP's max_input_vars limit --}}
             @csrf
             @method('PUT')
             <input type="hidden" name="tab" :value="tab" value="{{ $active }}">
 
             {{-- Page tabs --}}
-            <nav class="mb-6 flex gap-1 overflow-x-auto rounded-xl bg-white p-1 shadow-sm ring-1 ring-ink-100" aria-label="Pages" role="tablist">
+            <nav class="mb-6 flex flex-wrap gap-1 rounded-xl bg-white p-1 shadow-sm ring-1 ring-ink-100" aria-label="Pages" role="tablist">
                 @foreach ($groups as $group)
                     <button type="button" role="tab" id="tab-{{ $group['id'] }}" aria-controls="panel-{{ $group['id'] }}"
                             @click="tab = @js($group['id']); history.replaceState(null, '', '?tab=' + tab)"
@@ -81,7 +83,7 @@
 
             {{-- Save bar --}}
             <div class="sticky bottom-0 z-10 -mx-4 mt-6 flex flex-col gap-3 border-t border-ink-100 bg-white/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:-mx-8 lg:px-8">
-                <p class="text-sm text-ink-500">Saves every page at once. A blank field goes back to the original wording.</p>
+                <p class="text-sm text-ink-500">Saves the page you're viewing. A blank field goes back to the original wording.</p>
                 <button class="btn-brand btn-sm shrink-0"><x-site.icon name="check" class="h-4 w-4" /> Save page text</button>
             </div>
         </form>

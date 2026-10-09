@@ -15,7 +15,7 @@
 <x-site.layout :title="$course->objective" :description="\Illuminate\Support\Str::limit(strip_tags($course->course_details), 160)" :image="img($course->image_url, 1200)" :schema="$schema">
 
     <x-site.page-hero :eyebrow="page_text('course.hero.eyebrow', [':weeks' => $course->duration])" :title="$course->objective" :image="img($course->image_url, 1600)"
-        :crumbs="['Courses' => route('courses'), $course->objective => null]">
+        :crumbs="[page_text('nav.courses') => route('courses'), $course->objective => null]">
         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
             <a href="{{ route('register', ['course' => $course->id]) }}" class="btn-brand">{{ page_text('course.hero.button_primary') }} <x-site.icon name="arrow-right" class="h-5 w-5" /></a>
             <a href="{{ route('contact') }}" class="btn-outline-light">{{ page_text('course.hero.button_secondary') }}</a>
@@ -69,15 +69,15 @@
                         <div class="bg-ink-950 p-6 text-white">
                             <p class="text-sm font-semibold uppercase tracking-wider text-ink-300">{{ page_text('course.sidebar.tuition') }}</p>
                             <p class="font-display text-5xl font-extrabold text-brand-400">{{ $currency }}{{ number_format($course->price) }}</p>
-                            <p class="mt-1 text-sm text-ink-300">+ {{ $currency }}{{ number_format($vat, 2) }} VAT ({{ \App\Support\Pricing::vatLabel() }}%)</p>
+                            <p class="mt-1 text-sm text-ink-300">{{ page_text('course.sidebar.vat', [':amount' => $currency . number_format($vat, 2), ':vat' => \App\Support\Pricing::vatLabel()]) }}</p>
                         </div>
                         <dl class="divide-y divide-ink-100">
                             @foreach ([
-                                ['calendar', 'Duration', $course->duration . ' weeks'],
-                                ['book', 'Theory sessions', $course->theory_session ?: '—'],
-                                ['steering', 'Practical sessions', $course->practical_session ?: '—'],
-                                ['clipboard', 'Examination', $course->examination ?: 'Included'],
-                                ['award', 'Certificate', page_text('course.sidebar.certificate')],
+                                ['calendar', page_text('course.sidebar.duration'), page_text('course.sidebar.weeks', [':weeks' => $course->duration])],
+                                ['book', page_text('course.sidebar.theory'), $course->theory_session ?: '—'],
+                                ['steering', page_text('course.sidebar.practical'), $course->practical_session ?: '—'],
+                                ['clipboard', page_text('course.sidebar.examination'), $course->examination ?: page_text('course.sidebar.exam_default')],
+                                ['award', page_text('course.sidebar.certificate_label'), page_text('course.sidebar.certificate')],
                             ] as [$icon, $label, $value])
                                 <div class="flex items-center justify-between gap-4 px-6 py-3.5">
                                     <dt class="flex items-center gap-3 text-ink-500"><x-site.icon :name="$icon" class="h-5 w-5 text-ink-400" />{{ $label }}</dt>

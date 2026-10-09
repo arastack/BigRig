@@ -1,1 +1,1 @@
-@include('errors.minimal-site', ['code' => 503, 'title' => 'Back shortly', 'message' => 'We\'re doing some maintenance. Please check back soon.'])
+@include('errors.minimal-site', ['code' => 503, 'title' => page_text('errors.503.title'), 'message' => page_text('errors.503.message')])

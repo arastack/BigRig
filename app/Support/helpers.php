@@ -81,3 +81,24 @@ if (! function_exists('page_text')) {
         return $replace ? strtr($text, $replace) : $text;
     }
 }
+
+if (! function_exists('page_html')) {
+    /**
+     * A short rich-text page_text() entry printed inline (inside a sentence, label or
+     * paragraph): sanitised, a lone wrapping <p> removed, {placeholders} swapped for
+     * the given values (escaped) and the template's link styling restored, because
+     * the sanitiser drops class attributes. Print with {!! !!}.
+     */
+    function page_html(string $key, array $replace = [], ?string $linkClass = null): string
+    {
+        $html = trim(clean_html(page_text($key)));
+
+        if (preg_match('#^<p>(.*)</p>$#s', $html, $m) && ! str_contains($m[1], '<p')) {
+            $html = $m[1];
+        }
+
+        $html = strtr($html, array_map(fn ($value) => e($value), $replace));
+
+        return $linkClass ? preg_replace('/<a\b(?![^>]*\bclass=)/', '<a class="' . e($linkClass) . '"', $html) : $html;
+    }
+}

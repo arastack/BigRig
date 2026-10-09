@@ -200,7 +200,7 @@
                     <x-site.icon name="quote" class="h-10 w-10 text-brand-500" />
                     <h2 class="mt-4 text-4xl">{{ $founder->speech_title }}</h2>
                     <blockquote class="prose-site mt-6 text-ink-600">{!! clean_html($founder->speech_content) !!}</blockquote>
-                    <figcaption class="mt-6 font-display text-xl font-bold uppercase text-ink-950">{{ $founder->founder_name }} <span class="block text-sm font-semibold tracking-widest text-ink-400">Founder</span></figcaption>
+                    <figcaption class="mt-6 font-display text-xl font-bold uppercase text-ink-950">{{ $founder->founder_name }} <span class="block text-sm font-semibold tracking-widest text-ink-400">{{ page_text('about.founder.caption') }}</span></figcaption>
                 </figure>
             </div>
         </section>

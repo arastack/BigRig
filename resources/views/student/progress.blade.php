@@ -150,11 +150,11 @@
                                     </span>
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div class="h-2.5 rounded-full {{ $progress['attendance_rate'] >= 75 ? 'bg-blue-600' : 'bg-yellow-600' }}"
+                                    <div class="h-2.5 rounded-full {{ $progress['attendance_rate'] >= \App\Support\AdmissionSettings::attendanceThreshold() ? 'bg-blue-600' : 'bg-yellow-600' }}"
                                          style="width: {{ $progress['attendance_rate'] }}%"></div>
                                 </div>
                                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    {{ $progress['attendance_rate'] >= 75 ? 'Good Standing' : 'Needs Improvement' }}
+                                    {{ $progress['attendance_rate'] >= \App\Support\AdmissionSettings::attendanceThreshold() ? 'Good Standing' : 'Needs Improvement' }}
                                 </p>
                             </div>
                         </div>

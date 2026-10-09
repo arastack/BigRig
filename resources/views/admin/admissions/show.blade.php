@@ -6,7 +6,7 @@
     $current = $paid ?? $pending;
     $chosenIds = $current?->objectiveIds() ?? [];
     $medical = $student->medical;
-    $labels = config('admissions.labels');
+    $answer = fn (string $field) => \App\Support\AdmissionSettings::optionLabel($field, $medical?->{$field});
     $age = $student->date_of_birth?->age;
     $healthFlags = collect([
         'Vision' => $medical?->visual_impairment,
@@ -186,11 +186,11 @@
                             @foreach ([
                                 'Weight' => $medical->weight ? rtrim(rtrim($medical->weight, '0'), '.') . ' kg' : null,
                                 'Height' => $medical->height ? rtrim(rtrim($medical->height, '0'), '.') . ' ft' : null,
-                                'Vision' => $labels['visual_impairment'][$medical->visual_impairment] ?? $medical->visual_impairment,
-                                'Hearing aid' => $labels['hearing_aid'][$medical->hearing_aid] ?? $medical->hearing_aid,
-                                'Conditions' => $labels['physical_disability'][$medical->physical_disability] ?? $medical->physical_disability,
-                                'Drug use' => $medical->weed,
-                                'Alcohol' => $labels['alcohol'][$medical->alcohol] ?? $medical->alcohol,
+                                'Vision' => $answer('visual_impairment'),
+                                'Hearing aid' => $answer('hearing_aid'),
+                                'Conditions' => $answer('physical_disability'),
+                                'Drug use' => $answer('weed'),
+                                'Alcohol' => $answer('alcohol'),
                                 'Medication' => $medical->prescribed_medication,
                                 'Failed drug test' => $medical->failed_drug_test,
                             ] as $label => $value)

@@ -185,12 +185,12 @@
                                         <div class="flex-1">
                                             <div class="flex items-center justify-between mb-1">
                                                 <span class="text-sm font-semibold
-                                                    {{ $student->attendance_rate >= 75 ? 'text-green-600' : ($student->attendance_rate >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
+                                                    {{ $student->attendance_rate >= \App\Support\AdmissionSettings::attendanceThreshold() ? 'text-green-600' : ($student->attendance_rate >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
                                                     {{ $student->attendance_rate }}%
                                                 </span>
                                             </div>
                                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                                <div class="h-2 rounded-full {{ $student->attendance_rate >= 75 ? 'bg-green-600' : ($student->attendance_rate >= 60 ? 'bg-yellow-600' : 'bg-red-600') }}"
+                                                <div class="h-2 rounded-full {{ $student->attendance_rate >= \App\Support\AdmissionSettings::attendanceThreshold() ? 'bg-green-600' : ($student->attendance_rate >= 60 ? 'bg-yellow-600' : 'bg-red-600') }}"
                                                      style="width: {{ $student->attendance_rate }}%"></div>
                                             </div>
                                         </div>
@@ -212,7 +212,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($student->attendance_rate >= 75)
+                                    @if($student->attendance_rate >= \App\Support\AdmissionSettings::attendanceThreshold())
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                             Good
                                         </span>
@@ -258,13 +258,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="text-center">
                         <div class="text-2xl font-bold text-green-600">
-                            {{ $students->where('attendance_rate', '>=', 75)->count() }}
+                            {{ $students->where('attendance_rate', '>=', \App\Support\AdmissionSettings::attendanceThreshold())->count() }}
                         </div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Good Attendance (≥75%)</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Good Attendance (≥{{ \App\Support\AdmissionSettings::attendanceThreshold() }}%)</p>
                     </div>
                     <div class="text-center">
                         <div class="text-2xl font-bold text-yellow-600">
-                            {{ $students->where('attendance_rate', '>=', 60)->where('attendance_rate', '<', 75)->count() }}
+                            {{ $students->where('attendance_rate', '>=', 60)->where('attendance_rate', '<', \App\Support\AdmissionSettings::attendanceThreshold())->count() }}
                         </div>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Warning (60-74%)</p>
                     </div>

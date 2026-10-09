@@ -1,1 +1,1 @@
-@include('errors.minimal-site', ['code' => 403, 'title' => 'No entry', 'message' => (isset($exception) && $exception->getMessage()) ? $exception->getMessage() : 'You don\'t have permission to view this page. If you think this is a mistake, contact the school.'])
+@include('errors.minimal-site', ['code' => 403, 'title' => page_text('errors.403.title'), 'message' => (isset($exception) && $exception->getMessage()) ? $exception->getMessage() : page_text('errors.403.message')])

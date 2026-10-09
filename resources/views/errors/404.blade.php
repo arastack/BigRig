@@ -1,1 +1,1 @@
-@include('errors.minimal-site', ['code' => 404, 'title' => 'Wrong turn', 'message' => 'The page you are looking for has moved or no longer exists.'])
+@include('errors.minimal-site', ['code' => 404, 'title' => page_text('errors.404.title'), 'message' => page_text('errors.404.message')])

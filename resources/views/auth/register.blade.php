@@ -21,17 +21,17 @@
     }
 
     $courseData = $courses->map(fn ($c) => ['id' => $c->id, 'name' => $c->objective, 'price' => (float) $c->price, 'weeks' => (int) $c->duration])->values();
-    $steps = ['Course', 'About you', 'Health', 'Documents'];
+    $steps = [page_text('register.steps.1'), page_text('register.steps.2'), page_text('register.steps.3'), page_text('register.steps.4')];
     $combos = \App\Support\Pricing::combosForBrowser($courses);
     $vatPercent = \App\Support\Pricing::vatPercent();
 @endphp
 
-<x-site.auth title="Apply" :wide="true">
+<x-site.auth :title="page_text('register.meta.title')" :wide="true">
     <div class="on-dark bg-ink-950 text-white">
         <div class="container-site py-10 sm:py-12">
-            <p class="eyebrow">Online application</p>
-            <h1 class="mt-3 text-5xl text-white sm:text-6xl">Apply to BigRig</h1>
-            <p class="mt-3 max-w-2xl text-ink-300">Takes about 10 minutes. Have your NIN and a passport photograph ready. Prefer paper? <a href="{{ route('register.form-pdf') }}" class="font-semibold text-brand-400 underline underline-offset-4">Download the PDF form</a>.</p>
+            <p class="eyebrow">{{ page_text('register.eyebrow') }}</p>
+            <h1 class="mt-3 text-5xl text-white sm:text-6xl">{{ page_text('register.title') }}</h1>
+            <p class="mt-3 max-w-2xl text-ink-300">{!! page_html('register.lead', ['{pdf_url}' => route('register.form-pdf')], 'font-semibold text-brand-400 underline underline-offset-4') !!}</p>
         </div>
     </div>
 
@@ -39,7 +39,7 @@
         <div class="container-site mt-8">
             <div class="flex gap-3 rounded-lg border border-brand-500 bg-brand-50 px-5 py-4 text-ink-900" role="alert">
                 <x-site.icon name="calendar" class="h-6 w-6 shrink-0" />
-                <p><strong>Admissions are currently closed.</strong> You can still look around, but applications will open with the next intake. <a href="{{ route('contact') }}" class="underline">Contact us</a> to be notified.</p>
+                <p>{!! page_html('register.closed', ['{contact_url}' => route('contact')], 'underline') !!}</p>
             </div>
         </div>
     @endunless
@@ -71,8 +71,8 @@
             <x-site.status :summary="false" />
             @if ($errors->any())
                 <div class="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
-                    <p class="font-semibold">Some details need attention — we've opened the step that needs fixing.</p>
-                    <p class="mt-1">For your security, please re-enter your password and re-attach your passport photograph and any documents.</p>
+                    <p class="font-semibold">{{ page_text('register.errors.title') }}</p>
+                    <p class="mt-1">{{ page_text('register.errors.text') }}</p>
                 </div>
             @endif
 
@@ -83,11 +83,11 @@
                 <section data-step="4" x-show="step === 4" @if ($initialStep !== 4) x-cloak @endif>@include('auth.register.documents')</section>
 
                 <div class="mt-10 flex items-center justify-between gap-4 border-t border-ink-100 pt-6">
-                    <button type="button" class="btn-outline btn-sm" x-show="step > 1" x-cloak @click="back()">Back</button>
+                    <button type="button" class="btn-outline btn-sm" x-show="step > 1" x-cloak @click="back()">{{ page_text('register.buttons.back') }}</button>
                     <span x-show="step === 1"></span>
-                    <button type="button" class="btn-dark" x-show="step < 4" @click="next()">Continue <x-site.icon name="arrow-right" class="h-5 w-5" /></button>
+                    <button type="button" class="btn-dark" x-show="step < 4" @click="next()">{{ page_text('register.buttons.continue') }} <x-site.icon name="arrow-right" class="h-5 w-5" /></button>
                     <button type="submit" class="btn-brand" x-show="step === 4" x-cloak :disabled="submitting || {{ $activeBatch ? 'false' : 'true' }}">
-                        <span x-show="!submitting">Submit application</span><span x-show="submitting" x-cloak>Submitting…</span>
+                        <span x-show="!submitting">{{ page_text('register.buttons.submit') }}</span><span x-show="submitting" x-cloak>{{ page_text('register.buttons.submitting') }}</span>
                     </button>
                 </div>
             </div>
@@ -96,10 +96,10 @@
         {{-- Summary --}}
         <aside class="lg:col-span-4">
             <div class="sticky top-6 overflow-hidden rounded-lg border-2 border-ink-950 bg-white">
-                <div class="bg-ink-950 px-6 py-4"><h2 class="text-2xl text-white">Your selection</h2></div>
+                <div class="bg-ink-950 px-6 py-4"><h2 class="text-2xl text-white">{{ page_text('register.summary.title') }}</h2></div>
                 <div class="p-6">
                     <template x-if="chosen().length === 0">
-                        <p class="text-sm text-ink-500">No course selected yet.</p>
+                        <p class="text-sm text-ink-500">{{ page_text('register.summary.empty') }}</p>
                     </template>
                     <ul class="space-y-3">
                         <template x-for="course in chosen()" :key="course.id">
@@ -110,16 +110,16 @@
                         </template>
                     </ul>
                     <dl class="mt-5 space-y-2 border-t border-ink-100 pt-4 text-sm">
-                        <div class="flex justify-between"><dt class="text-ink-500">Subtotal</dt><dd x-text="money(subtotal())"></dd></div>
+                        <div class="flex justify-between"><dt class="text-ink-500">{{ page_text('register.summary.subtotal') }}</dt><dd x-text="money(subtotal())"></dd></div>
                         <div class="flex justify-between text-green-700" x-show="discount() > 0" x-cloak><dt x-text="combo()?.name"></dt><dd x-text="'−' + money(discount())"></dd></div>
-                        <div class="flex justify-between"><dt class="text-ink-500">VAT ({{ \App\Support\Pricing::vatLabel() }}%)</dt><dd x-text="money(vat())"></dd></div>
-                        <div class="flex justify-between border-t border-ink-100 pt-3 text-base"><dt class="font-semibold text-ink-950">Total due</dt><dd class="font-display text-2xl font-bold text-ink-950" x-text="money(subtotal() - discount() + vat())"></dd></div>
+                        <div class="flex justify-between"><dt class="text-ink-500">{{ page_text('register.summary.vat', [':vat' => \App\Support\Pricing::vatLabel()]) }}</dt><dd x-text="money(vat())"></dd></div>
+                        <div class="flex justify-between border-t border-ink-100 pt-3 text-base"><dt class="font-semibold text-ink-950">{{ page_text('register.summary.total') }}</dt><dd class="font-display text-2xl font-bold text-ink-950" x-text="money(subtotal() - discount() + vat())"></dd></div>
                     </dl>
-                    <p class="mt-4 text-xs text-ink-400" x-show="weeks() > 0" x-text="'Programme length: ' + weeks() + ' weeks' + (chosen().length > 1 ? ' if taken one after another' : '')"></p>
+                    <p class="mt-4 text-xs text-ink-400" x-show="weeks() > 0" x-text="@js(page_text('register.summary.length')).replace(':weeks', weeks()) + (chosen().length > 1 ? ' ' + @js(page_text('register.summary.length_multi')) : '')"></p>
                     @if ($activeBatch)
-                        <p class="mt-4 flex items-center gap-2 rounded-md bg-ink-50 px-3 py-2 text-xs font-medium text-ink-700"><x-site.icon name="calendar" class="h-4 w-4" /> Intake: {{ $activeBatch->batch_name }}</p>
+                        <p class="mt-4 flex items-center gap-2 rounded-md bg-ink-50 px-3 py-2 text-xs font-medium text-ink-700"><x-site.icon name="calendar" class="h-4 w-4" /> {{ page_text('register.summary.intake', [':batch' => $activeBatch->batch_name]) }}</p>
                     @endif
-                    <p class="mt-4 text-xs text-ink-400">You pay after submitting. Your place is confirmed when payment is received.</p>
+                    <p class="mt-4 text-xs text-ink-400">{{ page_text('register.summary.note') }}</p>
                 </div>
             </div>
         </aside>
@@ -166,7 +166,7 @@
                     if (n === 4) {
                         const password = this.$root.querySelector('#password');
                         const confirmation = this.$root.querySelector('#password_confirmation');
-                        confirmation.setCustomValidity(password.value === confirmation.value ? '' : 'Passwords do not match.');
+                        confirmation.setCustomValidity(password.value === confirmation.value ? '' : @js(page_text('register.password_mismatch')));
                     }
 
                     for (const field of section.querySelectorAll('input, select, textarea')) {

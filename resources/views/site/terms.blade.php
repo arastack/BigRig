@@ -10,7 +10,7 @@
     ]);
 @endphp
 <x-site.layout :title="page_text('terms.meta.title')" :description="page_text('terms.meta.description')">
-    <x-site.page-hero :eyebrow="page_text('terms.hero.eyebrow')" :title="page_text('terms.title')" :crumbs="['Terms & conditions' => null]" lead="Last updated {{ $updated->format('j F Y') }}" />
+    <x-site.page-hero :eyebrow="page_text('terms.hero.eyebrow')" :title="page_text('terms.title')" :crumbs="[page_text('footer.terms') => null]" :lead="page_text('terms.updated', [':date' => $updated->format('j F Y')])" />
 
     <section class="section">
         <div class="container-site">

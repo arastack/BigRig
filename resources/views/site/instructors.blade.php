@@ -1,5 +1,5 @@
 <x-site.layout :title="page_text('instructors.meta.title')" :description="page_text('instructors.meta.description')">
-    <x-site.page-hero :eyebrow="page_text('instructors.hero.eyebrow')" :title="page_text('instructors.hero.title')" :crumbs="['Instructors' => null]"
+    <x-site.page-hero :eyebrow="page_text('instructors.hero.eyebrow')" :title="page_text('instructors.hero.title')" :crumbs="[page_text('nav.instructors') => null]"
         :lead="page_text('instructors.hero.lead')" />
 
     <section class="section">

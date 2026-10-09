@@ -1,7 +1,7 @@
 <x-site.layout :title="page_text('courses.meta.title')" :description="page_text('courses.meta.description')">
     @php $currency = $settings->base_currency ?? '₦'; @endphp
 
-    <x-site.page-hero :eyebrow="page_text('courses.hero.eyebrow')" :title="page_text('courses.hero.title')" :crumbs="['Courses' => null]"
+    <x-site.page-hero :eyebrow="page_text('courses.hero.eyebrow')" :title="page_text('courses.hero.title')" :crumbs="[page_text('nav.courses') => null]"
         :lead="page_text('courses.hero.lead')" />
 
     <section class="section bg-ink-50">
@@ -27,12 +27,12 @@
                 <table class="w-full min-w-[720px] text-left">
                     <thead class="bg-ink-950 text-white">
                         <tr>
-                            <th scope="col" class="px-5 py-4 font-display text-base font-semibold uppercase tracking-wider">Programme</th>
-                            <th scope="col" class="px-5 py-4 font-display text-base font-semibold uppercase tracking-wider">Duration</th>
-                            <th scope="col" class="px-5 py-4 font-display text-base font-semibold uppercase tracking-wider">Theory</th>
-                            <th scope="col" class="px-5 py-4 font-display text-base font-semibold uppercase tracking-wider">Practical</th>
-                            <th scope="col" class="px-5 py-4 font-display text-base font-semibold uppercase tracking-wider">Exam</th>
-                            <th scope="col" class="px-5 py-4 text-right font-display text-base font-semibold uppercase tracking-wider">Tuition</th>
+                            <th scope="col" class="px-5 py-4 font-display text-base font-semibold uppercase tracking-wider">{{ page_text('courses.table.programme') }}</th>
+                            <th scope="col" class="px-5 py-4 font-display text-base font-semibold uppercase tracking-wider">{{ page_text('courses.table.duration') }}</th>
+                            <th scope="col" class="px-5 py-4 font-display text-base font-semibold uppercase tracking-wider">{{ page_text('courses.table.theory') }}</th>
+                            <th scope="col" class="px-5 py-4 font-display text-base font-semibold uppercase tracking-wider">{{ page_text('courses.table.practical') }}</th>
+                            <th scope="col" class="px-5 py-4 font-display text-base font-semibold uppercase tracking-wider">{{ page_text('courses.table.exam') }}</th>
+                            <th scope="col" class="px-5 py-4 text-right font-display text-base font-semibold uppercase tracking-wider">{{ page_text('courses.table.tuition') }}</th>
                             <th scope="col" class="px-5 py-4"><span class="sr-only">Actions</span></th>
                         </tr>
                     </thead>
@@ -40,12 +40,12 @@
                         @foreach ($courses as $course)
                             <tr class="hover:bg-ink-50">
                                 <th scope="row" class="px-5 py-4"><a href="{{ route('course', $course->slug) }}" class="font-semibold text-ink-950 hover:underline">{{ $course->objective }}</a></th>
-                                <td class="px-5 py-4">{{ $course->duration }} weeks</td>
-                                <td class="px-5 py-4">{{ $course->theory_session ?: '—' }} sessions</td>
-                                <td class="px-5 py-4">{{ $course->practical_session ?: '—' }} sessions</td>
-                                <td class="px-5 py-4">{{ $course->examination ?: 'Included' }}</td>
+                                <td class="px-5 py-4">{{ page_text('courses.table.weeks', [':weeks' => $course->duration]) }}</td>
+                                <td class="px-5 py-4">{{ page_text('courses.table.sessions', [':count' => $course->theory_session ?: '—']) }}</td>
+                                <td class="px-5 py-4">{{ page_text('courses.table.sessions', [':count' => $course->practical_session ?: '—']) }}</td>
+                                <td class="px-5 py-4">{{ $course->examination ?: page_text('courses.table.exam_default') }}</td>
                                 <td class="px-5 py-4 text-right font-display text-xl font-bold text-ink-950">{{ $currency }}{{ number_format($course->price) }}</td>
-                                <td class="px-5 py-4 text-right"><a href="{{ route('register', ['course' => $course->id]) }}" class="btn-brand btn-sm">Apply</a></td>
+                                <td class="px-5 py-4 text-right"><a href="{{ route('register', ['course' => $course->id]) }}" class="btn-brand btn-sm">{{ page_text('courses.table.apply') }}</a></td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -55,8 +55,8 @@
             @foreach (\App\Support\Pricing::packages() as $combo)
                 <div class="mt-6 flex flex-col gap-4 rounded-lg bg-brand-400 p-6 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="font-display text-3xl font-bold uppercase text-ink-950">{{ $combo['name'] }} — save {{ $currency }}{{ number_format($combo['discount']) }}</p>
-                        <p class="mt-1 text-ink-800">{{ $combo['description'] }}@if ($combo['weeks']) Complete both in about {{ $combo['weeks'] }} weeks.@endif</p>
+                        <p class="font-display text-3xl font-bold uppercase text-ink-950">{{ page_text('courses.combo.title', [':name' => $combo['name'], ':amount' => $currency . number_format($combo['discount'])]) }}</p>
+                        <p class="mt-1 text-ink-800">{{ $combo['description'] }}@if ($combo['weeks']) {{ page_text('courses.combo.weeks', [':weeks' => $combo['weeks']]) }}@endif</p>
                     </div>
                     <a href="{{ route('register') }}" class="btn-dark shrink-0">{{ page_text('courses.combo.button') }}</a>
                 </div>

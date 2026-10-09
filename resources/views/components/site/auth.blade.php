@@ -20,9 +20,9 @@
                 <a href="{{ route('index') }}" aria-label="{{ $siteName }} home"><img src="{{ brand_logo('light', 240) }}" alt="{{ $siteName }}" class="h-14 w-auto"></a>
                 <div class="text-sm text-ink-500">
                     @auth
-                        <form method="POST" action="{{ route('logout') }}">@csrf<button class="font-semibold text-ink-950 underline decoration-brand-400 decoration-2 underline-offset-4">Sign out</button></form>
+                        <form method="POST" action="{{ route('logout') }}">@csrf<button class="font-semibold text-ink-950 underline decoration-brand-400 decoration-2 underline-offset-4">{{ page_text('auth_pages.sign_out') }}</button></form>
                     @else
-                        Already applied? <a href="{{ route('login') }}" class="font-semibold text-ink-950 underline decoration-brand-400 decoration-2 underline-offset-4">Sign in</a>
+                        {{ page_text('auth_pages.applied') }} <a href="{{ route('login') }}" class="font-semibold text-ink-950 underline decoration-brand-400 decoration-2 underline-offset-4">{{ page_text('auth_pages.sign_in') }}</a>
                     @endauth
                 </div>
             </div>
@@ -37,7 +37,7 @@
                 <div class="flex flex-1 items-center px-6 py-10 sm:px-10">
                     <div class="mx-auto w-full max-w-md">{{ $slot }}</div>
                 </div>
-                <p class="px-6 pb-6 text-xs text-ink-400 sm:px-10">&copy; {{ now()->year }} {{ $siteName }} · <a href="{{ route('privacy') }}" class="hover:text-ink-700">Privacy</a> · <a href="{{ route('terms') }}" class="hover:text-ink-700">Terms</a></p>
+                <p class="px-6 pb-6 text-xs text-ink-400 sm:px-10">&copy; {{ now()->year }} {{ $siteName }} · <a href="{{ route('privacy') }}" class="hover:text-ink-700">{{ page_text('auth_pages.privacy') }}</a> · <a href="{{ route('terms') }}" class="hover:text-ink-700">{{ page_text('auth_pages.terms') }}</a></p>
             </main>
             <aside class="on-dark relative hidden overflow-hidden bg-ink-950 text-white lg:flex lg:flex-col lg:justify-end">
                 <div class="pointer-events-none absolute -right-24 top-0 h-full w-1/2 skew-x-[-12deg] bg-brand-400" aria-hidden="true"></div>

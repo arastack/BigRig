@@ -4,7 +4,7 @@
     <x-portal.page :title="$course->objective" subtitle="Your sessions, attendance and topics covered." :back="route('student.progress')">
         <div class="grid gap-4 sm:grid-cols-3">
             <x-portal.stat label="Sessions completed" :value="$stats['completed'] . ' / ' . $stats['total']" icon="calendar" :hint="$pct($stats['completed'], $stats['total']) . '% of scheduled sessions'" />
-            <x-portal.stat label="Attendance" :value="$stats['recorded'] ? $pct($stats['attended'], $stats['recorded']) . '%' : '—'" icon="clipboard" :hint="$stats['attended'] . ' attended of ' . $stats['recorded'] . ' recorded'" :tone="$stats['recorded'] && $pct($stats['attended'], $stats['recorded']) < 75 ? 'alert' : 'default'" />
+            <x-portal.stat label="Attendance" :value="$stats['recorded'] ? $pct($stats['attended'], $stats['recorded']) . '%' : '—'" icon="clipboard" :hint="$stats['attended'] . ' attended of ' . $stats['recorded'] . ' recorded'" :tone="$stats['recorded'] && $pct($stats['attended'], $stats['recorded']) < \App\Support\AdmissionSettings::attendanceThreshold() ? 'alert' : 'default'" />
             <x-portal.stat label="Topics covered" :value="$stats['topics_covered'] . ' / ' . $stats['topics_total']" icon="book" :hint="$instructor ? 'Instructor: ' . $instructor->firstName . ' ' . $instructor->lastName : 'Instructor being assigned'" />
         </div>
 

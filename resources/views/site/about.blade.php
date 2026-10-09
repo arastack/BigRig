@@ -4,11 +4,11 @@
             ['value' => $about?->students_count ? number_format($about->students_count) . '+' : null, 'label' => page_text('about.stats.1')],
             ['value' => $about?->pass_rate ? rtrim(rtrim(number_format($about->pass_rate, 1), '0'), '.') . '%' : null, 'label' => page_text('about.stats.2')],
             ['value' => $about?->instructors_count ?: null, 'label' => page_text('about.stats.3')],
-            ['value' => $settings?->commence_year ? 'Since ' . $settings->commence_year : null, 'label' => page_text('about.stats.4')],
+            ['value' => $settings?->commence_year ? page_text('about.stats.since', [':year' => $settings->commence_year]) : null, 'label' => page_text('about.stats.4')],
         ])->filter(fn ($s) => $s['value']);
     @endphp
 
-    <x-site.page-hero :eyebrow="page_text('about.hero.eyebrow')" :title="$about?->banner_title ?? page_text('about.hero.title')" :image="img($about?->banner_picture, 1600)" :crumbs="['About' => null]" />
+    <x-site.page-hero :eyebrow="page_text('about.hero.eyebrow')" :title="$about?->banner_title ?? page_text('about.hero.title')" :image="img($about?->banner_picture, 1600)" :crumbs="[page_text('nav.about') => null]" />
 
     <section class="section">
         <div class="container-site grid gap-12 lg:grid-cols-12 lg:gap-16">
@@ -47,7 +47,7 @@
                     <x-site.icon name="quote" class="h-10 w-10 text-brand-500" />
                     <h2 class="mt-4 text-4xl">{{ $founder->speech_title }}</h2>
                     <blockquote class="prose-site mt-6 text-ink-600">{!! clean_html($founder->speech_content) !!}</blockquote>
-                    <figcaption class="mt-6 font-display text-xl font-bold uppercase">{{ $founder->founder_name }} <span class="block text-sm tracking-widest text-ink-400">Founder</span></figcaption>
+                    <figcaption class="mt-6 font-display text-xl font-bold uppercase">{{ $founder->founder_name }} <span class="block text-sm tracking-widest text-ink-400">{{ page_text('about.founder.caption') }}</span></figcaption>
                 </figure>
             </div>
         </section>

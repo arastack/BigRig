@@ -5,11 +5,11 @@
             <h1 class="mt-2 text-5xl text-white sm:text-6xl">{{ $title }}</h1>
             <p class="mt-4 max-w-xl text-lg text-ink-300">{{ $message }}</p>
             <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a href="{{ url('/') }}" class="btn-brand">Back to home</a>
+                <a href="{{ url('/') }}" class="btn-brand">{{ page_text('errors.home') }}</a>
                 @auth
-                    <a href="{{ route('dashboard') }}" class="btn-outline-light">My portal</a>
+                    <a href="{{ route('dashboard') }}" class="btn-outline-light">{{ page_text('nav.portal') }}</a>
                 @else
-                    <a href="{{ route('contact') }}" class="btn-outline-light">Contact us</a>
+                    <a href="{{ route('contact') }}" class="btn-outline-light">{{ page_text('errors.contact') }}</a>
                 @endauth
             </div>
         </div>

@@ -9,7 +9,7 @@
         @if ($crumbs)
             <nav aria-label="Breadcrumb" class="mb-6">
                 <ol class="flex flex-wrap items-center gap-2 text-sm text-ink-300">
-                    <li><a href="{{ route('index') }}" class="hover:text-brand-400">Home</a></li>
+                    <li><a href="{{ route('index') }}" class="hover:text-brand-400">{{ page_text('nav.home') }}</a></li>
                     @foreach ($crumbs as $label => $url)
                         <li aria-hidden="true">/</li>
                         <li>@if ($url)<a href="{{ $url }}" class="hover:text-brand-400">{{ $label }}</a>@else<span class="text-white" aria-current="page">{{ $label }}</span>@endif</li>

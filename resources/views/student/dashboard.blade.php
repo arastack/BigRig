@@ -31,7 +31,7 @@
             <x-portal.stat label="Courses" :value="$enrolledCourses->count()" icon="book" :href="route('student.courses')" />
             <x-portal.stat label="Attendance" :value="$attendanceStats->total ? $attendancePercentage . '%' : '—'" icon="clipboard"
                 :hint="$attendanceStats->total ? ($attendanceStats->present + $attendanceStats->late) . ' of ' . $attendanceStats->total . ' sessions attended' : 'No sessions recorded yet'"
-                :tone="$attendanceStats->total && $attendancePercentage < 75 ? 'alert' : 'default'" :href="route('student.attendance')" />
+                :tone="$attendanceStats->total && $attendancePercentage < \App\Support\AdmissionSettings::attendanceThreshold() ? 'alert' : 'default'" :href="route('student.attendance')" />
             <x-portal.stat label="Upcoming sessions" :value="$upcomingSchedule->count()" icon="calendar" hint="In the next 14 days" :href="route('student.schedule')" />
             <x-portal.stat label="Unread announcements" :value="$unreadCount" icon="megaphone" :href="route('student.announcements')" />
         </div>

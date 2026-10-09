@@ -9,6 +9,7 @@ use App\Models\StudentAttendance;
 use App\Models\StudentInstructorDistribution;
 use App\Models\TrainingObjective;
 use App\Models\User;
+use App\Support\AdmissionSettings;
 use Illuminate\Http\Request;
 
 /**
@@ -16,11 +17,10 @@ use Illuminate\Http\Request;
  */
 class AttendanceReportController extends Controller
 {
-    public const AT_RISK_BELOW = 75;
-
     public function index(Request $request)
     {
         $filters = $request->only(['batch', 'course', 'instructor', 'risk']);
+        $threshold = AdmissionSettings::attendanceThreshold();
 
         $assignments = StudentInstructorDistribution::with(['student', 'instructor', 'course', 'batch'])
             ->whereHas('student', fn ($q) => $q->whereNull('suspended_at'))
@@ -54,7 +54,7 @@ class AttendanceReportController extends Controller
                 'rate' => $recorded ? (int) round($attended / $recorded * 100) : null,
             ];
         })
-            ->when(($filters['risk'] ?? null) === '1', fn ($rows) => $rows->filter(fn ($r) => $r['rate'] !== null && $r['rate'] < self::AT_RISK_BELOW))
+            ->when(($filters['risk'] ?? null) === '1', fn ($rows) => $rows->filter(fn ($r) => $r['rate'] !== null && $r['rate'] < $threshold))
             ->sortBy(fn ($r) => [$r['rate'] ?? 101, $r['student']?->lastName])
             ->values();
 
@@ -76,14 +76,14 @@ class AttendanceReportController extends Controller
             'filters' => $filters,
             'stats' => [
                 'average' => $withRecords->isNotEmpty() ? (int) round($withRecords->avg('rate')) : null,
-                'atRisk' => $withRecords->filter(fn ($r) => $r['rate'] < self::AT_RISK_BELOW)->count(),
+                'atRisk' => $withRecords->filter(fn ($r) => $r['rate'] < $threshold)->count(),
                 'sessions' => StudentAttendance::count(),
                 'students' => $rows->pluck('student.id')->unique()->count(),
             ],
             'batches' => EnrolmentBatch::orderByDesc('id')->get(),
             'courses' => TrainingObjective::orderBy('objective')->get(),
             'instructors' => User::whereHas('roles', fn ($q) => $q->where('portal', Role::PORTAL_INSTRUCTOR))->orderBy('firstName')->get(),
-            'threshold' => self::AT_RISK_BELOW,
+            'threshold' => $threshold,
         ]);
     }
 }

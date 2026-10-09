@@ -35,7 +35,7 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <div class="text-3xl font-bold {{ $overallStats['average_attendance'] >= 75 ? 'text-green-600' : 'text-red-600' }}">
+                        <div class="text-3xl font-bold {{ $overallStats['average_attendance'] >= \App\Support\AdmissionSettings::attendanceThreshold() ? 'text-green-600' : 'text-red-600' }}">
                             {{ round($overallStats['average_attendance']) }}%
                         </div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Overall Attendance</p>
@@ -98,7 +98,7 @@
                     <div class="ml-3">
                         <p class="text-sm text-gray-600 dark:text-gray-400">Status</p>
                         <p class="text-lg font-semibold">
-                            @if($overallStats['average_attendance'] >= 75)
+                            @if($overallStats['average_attendance'] >= \App\Support\AdmissionSettings::attendanceThreshold())
                                 <span class="text-green-600">Good</span>
                             @elseif($overallStats['average_attendance'] >= 60)
                                 <span class="text-yellow-600">Warning</span>
@@ -128,7 +128,7 @@
                                         <h3 class="font-medium text-gray-900 dark:text-gray-100">
                                             {{ $course->objective }}
                                         </h3>
-                                        <span class="text-sm font-semibold {{ $course->attendance_rate >= 75 ? 'text-green-600' : 'text-red-600' }}">
+                                        <span class="text-sm font-semibold {{ $course->attendance_rate >= \App\Support\AdmissionSettings::attendanceThreshold() ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $course->attendance_rate }}% Attendance
                                         </span>
                                     </div>

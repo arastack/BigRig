@@ -43,7 +43,8 @@ use App\Http\Controllers\Admin\{
     ContentController,
     PageTextController,
     PackageController,
-    AttendanceReportController
+    AttendanceReportController,
+    AdmissionSettingsController
 };
 use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
 
@@ -340,6 +341,12 @@ Route::middleware(['auth:sanctum', 'verified', 'not-suspended'])->group(function
             Route::put('/vat', 'updateVat')->name('packages.vat');
             Route::put('/{package}', 'update')->name('package.update');
             Route::delete('/{package}', 'destroy')->name('package.destroy');
+        });
+
+        // Admissions settings: health questions and options, relationships, attendance threshold
+        Route::controller(AdmissionSettingsController::class)->prefix('admission-settings')->middleware('permission:manage_admission_settings')->group(function () {
+            Route::get('/', 'index')->name('admin.admission-settings');
+            Route::put('/', 'update')->name('admin.admission-settings.update');
         });
 
         // Attendance across the school

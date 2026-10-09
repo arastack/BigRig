@@ -1,14 +1,4 @@
-@php
-    $options = config('admissions.options');
-    $labels = config('admissions.labels');
-    $groups = [
-        'visual_impairment' => ['Do you have any vision condition?', 'Glasses or contact lenses are fine — tell us so instructors know.'],
-        'hearing_aid' => ['Do you use a hearing aid?', null],
-        'physical_disability' => ['Do you have any of these conditions?', 'Choose the one that applies, or None.'],
-        'weed' => ['Do you use marijuana (weed), cocaine or other recreational drugs?', 'All students take a pre-employment drug screening.'],
-        'alcohol' => ['How often do you drink alcohol?', null],
-    ];
-@endphp
+@php $questions = \App\Support\AdmissionSettings::healthQuestions('web'); @endphp
 <h2 class="text-3xl">Health declaration</h2>
 <p class="mt-1 text-ink-500">Operating heavy vehicles safely depends on your health. Answer honestly — this is confidential and only seen by admissions and training staff.</p>
 
@@ -18,15 +8,16 @@
 </div>
 
 <div class="mt-8 space-y-8">
-    @foreach ($groups as $field => [$question, $help])
+    @foreach ($questions as $q)
+        @php $field = $q['field']; @endphp
         <fieldset>
-            <legend class="font-semibold text-ink-900">{{ $question }} <span class="text-red-600" aria-hidden="true">*</span></legend>
-            @if ($help)<p class="mt-0.5 text-sm text-ink-400">{{ $help }}</p>@endif
+            <legend class="font-semibold text-ink-900">{{ $q['question'] }} @if ($q['required'])<span class="text-red-600" aria-hidden="true">*</span>@endif</legend>
+            @if ($q['help'])<p class="mt-0.5 text-sm text-ink-400">{{ $q['help'] }}</p>@endif
             <div class="mt-3 flex flex-wrap gap-2">
-                @foreach ($options[$field] as $value)
+                @foreach ($q['options'] as $option)
                     <label>
-                        <input type="radio" name="{{ $field }}" value="{{ $value }}" class="peer sr-only" required @checked(old($field) === $value)>
-                        <span class="inline-flex cursor-pointer items-center rounded-full border border-ink-200 px-4 py-2 text-sm font-medium text-ink-700 transition hover:border-ink-400 peer-checked:border-ink-950 peer-checked:bg-ink-950 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-400">{{ $labels[$field][$value] ?? $value }}</span>
+                        <input type="radio" name="{{ $field }}" value="{{ $option['value'] }}" class="peer sr-only" @required($q['required']) @checked(old($field) === $option['value'])>
+                        <span class="inline-flex cursor-pointer items-center rounded-full border border-ink-200 px-4 py-2 text-sm font-medium text-ink-700 transition hover:border-ink-400 peer-checked:border-ink-950 peer-checked:bg-ink-950 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-400">{{ $option['label'] }}</span>
                     </label>
                 @endforeach
             </div>

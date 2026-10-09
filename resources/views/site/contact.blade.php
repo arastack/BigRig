@@ -3,7 +3,7 @@
     $whatsapp = ($settings->show_whatsapp_support ?? false) && $settings->whatsapp_support ? preg_replace('/\D/', '', $settings->whatsapp_support) : null;
 @endphp
 <x-site.layout :title="page_text('contact.meta.title')" :description="page_text('contact.meta.description')">
-    <x-site.page-hero :eyebrow="page_text('contact.hero.eyebrow')" :title="page_text('contact.hero.title')" :crumbs="['Contact' => null]"
+    <x-site.page-hero :eyebrow="page_text('contact.hero.eyebrow')" :title="page_text('contact.hero.title')" :crumbs="[page_text('nav.contact') => null]"
         :lead="page_text('contact.hero.lead')" />
 
     <section class="section">
@@ -55,10 +55,10 @@
             <div class="lg:col-span-7">
                 <div class="rounded-lg border-2 border-ink-950 p-6 sm:p-10">
                     <h2 class="text-4xl">{{ page_text('contact.form.title') }}</h2>
-                    <p class="mt-2 text-ink-500">Fields marked <span class="text-red-600">*</span> are required.</p>
+                    <p class="mt-2 text-ink-500">{!! str_replace('*', '<span class="text-red-600">*</span>', e(page_text('contact_form.required_note'))) !!}</p>
 
                     @if ($errors->any())
-                        <div class="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">Please check the highlighted fields and try again.</div>
+                        <div class="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">{{ page_text('contact_form.error') }}</div>
                     @endif
 
                     <form method="POST" action="{{ route('contact.store') }}" class="mt-8 grid gap-5 sm:grid-cols-2" x-data="{ sending: false }" @submit="sending = true">
@@ -67,41 +67,41 @@
                         <div class="hidden" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 
                         <div>
-                            <label for="name" class="form-label">Full name <span class="text-red-600">*</span></label>
+                            <label for="name" class="form-label">{{ page_text('contact_form.name') }} <span class="text-red-600">*</span></label>
                             <input id="name" name="name" type="text" required autocomplete="name" value="{{ old('name') }}" @class(['form-field', 'border-red-400' => $errors->has('name')])>
                             @error('name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label for="email" class="form-label">Email <span class="text-red-600">*</span></label>
+                            <label for="email" class="form-label">{{ page_text('contact_form.email') }} <span class="text-red-600">*</span></label>
                             <input id="email" name="email" type="email" required autocomplete="email" value="{{ old('email') }}" @class(['form-field', 'border-red-400' => $errors->has('email')])>
                             @error('email')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label for="phone" class="form-label">Phone</label>
+                            <label for="phone" class="form-label">{{ page_text('contact_form.phone') }}</label>
                             <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" value="{{ old('phone') }}" class="form-field">
                         </div>
                         <div>
-                            <label for="course_id" class="form-label">Course of interest</label>
+                            <label for="course_id" class="form-label">{{ page_text('contact_form.course') }}</label>
                             <select id="course_id" name="course_id" class="form-field">
-                                <option value="">Not sure yet</option>
+                                <option value="">{{ page_text('contact_form.course_none') }}</option>
                                 @foreach ($courses as $course)
                                     <option value="{{ $course->id }}" @selected(old('course_id', request('course')) == $course->id)>{{ $course->objective }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="sm:col-span-2">
-                            <label for="subject" class="form-label">Subject</label>
-                            <input id="subject" name="subject" type="text" value="{{ old('subject') }}" class="form-field" placeholder="e.g. Next intake date">
+                            <label for="subject" class="form-label">{{ page_text('contact_form.subject') }}</label>
+                            <input id="subject" name="subject" type="text" value="{{ old('subject') }}" class="form-field" placeholder="{{ page_text('contact_form.subject_placeholder') }}">
                         </div>
                         <div class="sm:col-span-2">
-                            <label for="message" class="form-label">Message <span class="text-red-600">*</span></label>
+                            <label for="message" class="form-label">{{ page_text('contact_form.message') }} <span class="text-red-600">*</span></label>
                             <textarea id="message" name="message" rows="6" required minlength="10" @class(['form-field', 'border-red-400' => $errors->has('message')])>{{ old('message') }}</textarea>
                             @error('message')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div class="flex flex-col gap-4 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
-                            <p class="text-xs text-ink-400">We use your details only to answer your enquiry. See our <a href="{{ route('privacy') }}" class="underline">privacy policy</a>.</p>
+                            <p class="text-xs text-ink-400">{!! page_html('contact_form.privacy', ['{privacy_url}' => route('privacy')], 'underline') !!}</p>
                             <button class="btn-brand shrink-0" :disabled="sending">
-                                <span x-show="!sending">{{ page_text('contact.form.button') }}</span><span x-show="sending" x-cloak>Sending…</span>
+                                <span x-show="!sending">{{ page_text('contact.form.button') }}</span><span x-show="sending" x-cloak>{{ page_text('contact_form.sending') }}</span>
                                 <x-site.icon name="send" class="h-5 w-5" />
                             </button>
                         </div>

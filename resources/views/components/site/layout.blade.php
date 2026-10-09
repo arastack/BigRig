@@ -21,12 +21,12 @@
         'linkedin' => $settings->linkedin_handle ?? null,
     ])->filter(fn ($url) => filled($url) && str_starts_with($url, 'http'));
     $nav = [
-        ['label' => 'Home', 'route' => 'index'],
-        ['label' => 'Courses', 'route' => 'courses', 'active' => ['courses', 'course']],
-        ['label' => 'About', 'route' => 'about-us'],
-        ['label' => 'Instructors', 'route' => 'our-instructors'],
-        ['label' => 'FAQ', 'route' => 'faq'],
-        ['label' => 'Contact', 'route' => 'contact'],
+        ['label' => page_text('nav.home'), 'route' => 'index'],
+        ['label' => page_text('nav.courses'), 'route' => 'courses', 'active' => ['courses', 'course']],
+        ['label' => page_text('nav.about'), 'route' => 'about-us'],
+        ['label' => page_text('nav.instructors'), 'route' => 'our-instructors'],
+        ['label' => page_text('nav.faq'), 'route' => 'faq'],
+        ['label' => page_text('nav.contact'), 'route' => 'contact'],
     ];
     $isActive = fn ($item) => request()->routeIs(...($item['active'] ?? [$item['route']]));
 @endphp
@@ -76,7 +76,7 @@
     @endif
 </head>
 <body class="flex min-h-screen flex-col" x-data="{ menu: false }" :class="menu && 'overflow-hidden lg:overflow-auto'">
-    <a href="#main" class="sr-only z-[100] rounded bg-brand-400 px-4 py-2 font-semibold text-ink-950 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
+    <a href="#main" class="sr-only z-[100] rounded bg-brand-400 px-4 py-2 font-semibold text-ink-950 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">{{ page_text('nav.skip') }}</a>
 
     {{-- Utility bar --}}
     <div class="hidden bg-ink-950 text-sm text-ink-200 md:block">
@@ -92,7 +92,7 @@
             @if ($activeBatch)
                 <a href="{{ route('register') }}" class="inline-flex items-center gap-2 font-medium text-white hover:text-brand-400">
                     <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-brand-400"></span></span>
-                    Admissions open — {{ $activeBatch->batch_name }}
+                    {{ page_text('nav.admissions_open', [':batch' => $activeBatch->batch_name]) }}
                     <x-site.icon name="arrow-right" class="h-4 w-4" />
                 </a>
             @endif
@@ -122,10 +122,10 @@
 
             <div class="flex items-center gap-2">
                 @auth
-                    <a href="{{ route('dashboard') }}" class="btn-outline btn-sm hidden sm:inline-flex">My portal</a>
+                    <a href="{{ route('dashboard') }}" class="btn-outline btn-sm hidden sm:inline-flex">{{ page_text('nav.portal') }}</a>
                 @else
-                    <a href="{{ route('login') }}" class="hidden px-3 py-2 font-display text-lg font-semibold uppercase tracking-wide text-ink-500 hover:text-ink-950 sm:inline-flex">Sign in</a>
-                    <a href="{{ route('register') }}" class="btn-brand btn-sm">Apply now</a>
+                    <a href="{{ route('login') }}" class="hidden px-3 py-2 font-display text-lg font-semibold uppercase tracking-wide text-ink-500 hover:text-ink-950 sm:inline-flex">{{ page_text('nav.sign_in') }}</a>
+                    <a href="{{ route('register') }}" class="btn-brand btn-sm">{{ page_text('nav.apply') }}</a>
                 @endauth
                 <button type="button" class="-mr-2 inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-950 hover:bg-ink-50 lg:hidden" @click="menu = true" aria-label="Open menu" :aria-expanded="menu.toString()" aria-controls="mobile-menu">
                     <x-site.icon name="menu" class="h-6 w-6" />
@@ -157,10 +157,10 @@
             </nav>
             <div class="space-y-3 border-t border-white/10 p-5">
                 @auth
-                    <a href="{{ route('dashboard') }}" class="btn-brand w-full">My portal</a>
+                    <a href="{{ route('dashboard') }}" class="btn-brand w-full">{{ page_text('nav.portal') }}</a>
                 @else
-                    <a href="{{ route('register') }}" class="btn-brand w-full">Apply now</a>
-                    <a href="{{ route('login') }}" class="btn-outline-light w-full">Sign in</a>
+                    <a href="{{ route('register') }}" class="btn-brand w-full">{{ page_text('nav.apply') }}</a>
+                    <a href="{{ route('login') }}" class="btn-outline-light w-full">{{ page_text('nav.sign_in') }}</a>
                 @endauth
                 @if ($phone)
                     <a href="tel:{{ $tel }}" class="flex items-center justify-center gap-2 pt-2 text-sm text-ink-300"><x-site.icon name="phone" class="h-4 w-4 text-brand-400" />{{ $phone }}</a>
@@ -200,10 +200,10 @@
                 <form method="POST" action="{{ route('email-subscription') }}" class="w-full">
                     @csrf
                     <div class="flex flex-col gap-3 sm:flex-row">
-                        <label for="newsletter-email" class="sr-only">Email address</label>
-                        <input id="newsletter-email" type="email" name="email" required autocomplete="email" placeholder="you@example.com" value="{{ old('email') }}"
+                        <label for="newsletter-email" class="sr-only">{{ page_text('footer.newsletter.email_label') }}</label>
+                        <input id="newsletter-email" type="email" name="email" required autocomplete="email" placeholder="{{ page_text('footer.newsletter.placeholder') }}" value="{{ old('email') }}"
                                class="h-12 w-full rounded-md border-0 bg-white/10 px-4 text-white ring-1 ring-white/20 placeholder:text-ink-400 focus:bg-white/15 focus:ring-2 focus:ring-brand-400">
-                        <button class="btn-brand h-12 shrink-0">Subscribe</button>
+                        <button class="btn-brand h-12 shrink-0">{{ page_text('footer.newsletter.button') }}</button>
                     </div>
                     @error('email', 'newsletter')<p class="mt-2 text-sm text-red-300">{{ $message }}</p>@enderror
                     @if (session('newsletter'))<p class="mt-2 text-sm text-brand-300" role="status">{{ session('newsletter') }}</p>@endif
@@ -225,7 +225,7 @@
             </div>
 
             <div class="lg:col-span-2">
-                <h3 class="text-lg text-white">Explore</h3>
+                <h3 class="text-lg text-white">{{ page_text('footer.explore') }}</h3>
                 <ul class="mt-4 space-y-2.5 text-sm">
                     @foreach ($nav as $item)
                         <li><a href="{{ route($item['route']) }}" class="hover:text-brand-400">{{ $item['label'] }}</a></li>
@@ -234,17 +234,17 @@
             </div>
 
             <div class="lg:col-span-3">
-                <h3 class="text-lg text-white">Admissions</h3>
+                <h3 class="text-lg text-white">{{ page_text('footer.admissions') }}</h3>
                 <ul class="mt-4 space-y-2.5 text-sm">
-                    <li><a href="{{ route('register') }}" class="hover:text-brand-400">Apply online</a></li>
-                    <li><a href="{{ route('register.form-pdf') }}" class="hover:text-brand-400">Download application form (PDF)</a></li>
-                    <li><a href="{{ route('login') }}" class="hover:text-brand-400">Track my application</a></li>
-                    <li><a href="{{ route('faq') }}" class="hover:text-brand-400">Admission questions</a></li>
+                    <li><a href="{{ route('register') }}" class="hover:text-brand-400">{{ page_text('footer.links.apply') }}</a></li>
+                    <li><a href="{{ route('register.form-pdf') }}" class="hover:text-brand-400">{{ page_text('footer.links.pdf') }}</a></li>
+                    <li><a href="{{ route('login') }}" class="hover:text-brand-400">{{ page_text('footer.links.track') }}</a></li>
+                    <li><a href="{{ route('faq') }}" class="hover:text-brand-400">{{ page_text('footer.links.faq') }}</a></li>
                 </ul>
             </div>
 
             <div class="lg:col-span-3">
-                <h3 class="text-lg text-white">Visit us</h3>
+                <h3 class="text-lg text-white">{{ page_text('footer.visit') }}</h3>
                 <ul class="mt-4 space-y-3 text-sm">
                     @if ($settings?->headquarters)
                         <li class="flex gap-3"><x-site.icon name="map-pin" class="mt-0.5 h-5 w-5 shrink-0 text-brand-400" /><span>{{ $settings->headquarters }}</span></li>
@@ -261,17 +261,17 @@
 
         <div class="border-t border-white/10">
             <div class="container-site flex flex-col gap-3 py-6 text-xs text-ink-400 sm:flex-row sm:items-center sm:justify-between">
-                <p>&copy; {{ now()->year }} {{ $siteName }}. All rights reserved.</p>
+                <p>&copy; {{ now()->year }} {{ $siteName }}. {{ page_text('footer.rights') }}</p>
                 <ul class="flex gap-5">
-                    <li><a href="{{ route('privacy') }}" class="hover:text-white">Privacy policy</a></li>
-                    <li><a href="{{ route('terms') }}" class="hover:text-white">Terms &amp; conditions</a></li>
+                    <li><a href="{{ route('privacy') }}" class="hover:text-white">{{ page_text('footer.privacy') }}</a></li>
+                    <li><a href="{{ route('terms') }}" class="hover:text-white">{{ page_text('footer.terms') }}</a></li>
                 </ul>
             </div>
         </div>
     </footer>
 
     @if ($whatsapp)
-        <a href="https://wa.me/{{ $whatsapp }}?text={{ rawurlencode('Hello BigRig, I would like to know more about your courses.') }}" target="_blank" rel="noopener"
+        <a href="https://wa.me/{{ $whatsapp }}?text={{ rawurlencode(page_text('footer.whatsapp_message')) }}" target="_blank" rel="noopener"
            class="fixed bottom-5 right-5 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-ink-950/20 ring-4 ring-white transition hover:scale-105"
            aria-label="Chat with us on WhatsApp">
             <svg class="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.4-.5.3-.5c.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.8h-.1a9.9 9.9 0 0 1-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4a9.8 9.8 0 0 1-1.5-5.2C2.1 6.6 6.5 2.2 12 2.2c2.6 0 5.1 1 7 2.9a9.8 9.8 0 0 1 2.9 7c0 5.4-4.4 9.8-9.9 9.8z"/></svg>

@@ -1,13 +1,13 @@
-<x-site.auth title="Reset your password">
-    <h1 class="text-5xl">Forgot your password?</h1>
-    <p class="mt-2 text-ink-500">Enter the email address you applied with and we'll send you a link to choose a new password.</p>
+<x-site.auth :title="page_text('forgot.meta.title')">
+    <h1 class="text-5xl">{{ page_text('forgot.title') }}</h1>
+    <p class="mt-2 text-ink-500">{{ page_text('forgot.lead') }}</p>
     <div class="mt-8">
         <x-site.status />
         <form method="POST" action="{{ route('password.email') }}" class="space-y-5">
             @csrf
-            <x-site.input name="email" label="Email address" type="email" required autofocus autocomplete="username" />
-            <button class="btn-brand w-full">Email me a reset link</button>
+            <x-site.input name="email" :label="page_text('forgot.email')" type="email" required autofocus autocomplete="username" />
+            <button class="btn-brand w-full">{{ page_text('forgot.button') }}</button>
         </form>
-        <p class="mt-6 text-sm text-ink-500"><a href="{{ route('login') }}" class="link-underline">Back to sign in</a></p>
+        <p class="mt-6 text-sm text-ink-500"><a href="{{ route('login') }}" class="link-underline">{{ page_text('forgot.back') }}</a></p>
     </div>
 </x-site.auth>

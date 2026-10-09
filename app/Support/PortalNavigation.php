@@ -55,6 +55,7 @@ class PortalNavigation
             ['title' => 'Admissions', 'items' => [
                 ['label' => 'Applicants', 'route' => 'admin.admissions.index', 'params' => ['status' => 'awaiting_payment'], 'icon' => 'file-text', 'can' => 'read_applicants', 'active' => ['admin.admissions.*'], 'query' => ['status' => 'awaiting_payment']],
                 ['label' => 'Students', 'route' => 'admin.admissions.index', 'params' => ['status' => 'enrolled'], 'icon' => 'graduation', 'can' => ['read_student_accounts', 'read_applicants'], 'active' => ['admin.admissions.*'], 'query' => ['status' => 'enrolled']],
+                ['label' => 'Admissions settings', 'route' => 'admin.admission-settings', 'icon' => 'clipboard', 'can' => 'manage_admission_settings'],
                 ['label' => 'Intake batches', 'route' => 'enrolment-batches', 'icon' => 'calendar', 'can' => ['read_enrolment_batches', 'manage_enrolment_batches']],
             ]],
             ['title' => 'Training', 'items' => [

@@ -10,7 +10,7 @@
     ]);
 @endphp
 <x-site.layout :title="page_text('privacy.meta.title')" :description="page_text('privacy.meta.description')">
-    <x-site.page-hero :eyebrow="page_text('privacy.hero.eyebrow')" :title="page_text('privacy.title')" :crumbs="['Privacy policy' => null]" lead="Last updated {{ $updated->format('j F Y') }}" />
+    <x-site.page-hero :eyebrow="page_text('privacy.hero.eyebrow')" :title="page_text('privacy.title')" :crumbs="[page_text('footer.privacy') => null]" :lead="page_text('privacy.updated', [':date' => $updated->format('j F Y')])" />
 
     <section class="section">
         <div class="container-site">

@@ -10,7 +10,7 @@
     ];
 @endphp
 <x-site.layout :title="page_text('faq.meta.title')" :description="page_text('faq.meta.description')" :schema="$schema">
-    <x-site.page-hero :eyebrow="page_text('faq.hero.eyebrow')" :title="page_text('faq.hero.title')" :crumbs="['FAQ' => null]"
+    <x-site.page-hero :eyebrow="page_text('faq.hero.eyebrow')" :title="page_text('faq.hero.title')" :crumbs="[page_text('nav.faq') => null]"
         :lead="page_text('faq.hero.lead')" />
 
     <section class="section">

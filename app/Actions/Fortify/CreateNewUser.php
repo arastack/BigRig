@@ -10,6 +10,7 @@ use App\Models\Subscription;
 use App\Models\TrainingObjective;
 use App\Models\User;
 use App\Notifications\ApplicationReceived;
+use App\Support\AdmissionSettings;
 use App\Support\Nigeria;
 use App\Support\Pricing;
 use Illuminate\Support\Facades\DB;
@@ -75,11 +76,11 @@ class CreateNewUser implements CreatesNewUsers
                     'user_id' => $user->id,
                     'weight' => $input['weight'] ?? null,
                     'height' => $input['height'] ?? null,
-                    'visual_impairment' => $input['visual_impairment'],
-                    'hearing_aid' => $input['hearing_aid'],
-                    'physical_disability' => $input['physical_disability'],
-                    'weed' => $input['weed'],
-                    'alcohol' => $input['alcohol'],
+                    'visual_impairment' => $input['visual_impairment'] ?? null,
+                    'hearing_aid' => $input['hearing_aid'] ?? null,
+                    'physical_disability' => $input['physical_disability'] ?? null,
+                    'weed' => $input['weed'] ?? null,
+                    'alcohol' => $input['alcohol'] ?? null,
                     'prescribed_medication' => $input['prescribed_medication'] ?? null,
                     'failed_drug_test' => $input['failed_drug_test'] ?? null,
                     'consent_given_at' => now(),
@@ -139,7 +140,11 @@ class CreateNewUser implements CreatesNewUsers
 
     public static function rules(array $passwordRules): array
     {
-        $options = config('admissions.options');
+        // Health answers follow Admin → Admissions settings; a question not asked online is skipped
+        $asked = collect(AdmissionSettings::healthQuestions('web'))->keyBy('field');
+        $health = fn (string $field) => $asked->has($field)
+            ? [$asked[$field]['required'] ? 'required' : 'nullable', Rule::in(AdmissionSettings::optionValues($field))]
+            : ['nullable', Rule::in(AdmissionSettings::optionValues($field))];
 
         return [
             // Course
@@ -167,11 +172,11 @@ class CreateNewUser implements CreatesNewUsers
             // Health
             'weight' => ['nullable', 'numeric', 'between:30,250'],
             'height' => ['nullable', 'numeric', 'between:3,8'],
-            'visual_impairment' => ['required', Rule::in($options['visual_impairment'])],
-            'hearing_aid' => ['required', Rule::in($options['hearing_aid'])],
-            'physical_disability' => ['required', Rule::in($options['physical_disability'])],
-            'weed' => ['required', Rule::in($options['weed'])],
-            'alcohol' => ['required', Rule::in($options['alcohol'])],
+            'visual_impairment' => $health('visual_impairment'),
+            'hearing_aid' => $health('hearing_aid'),
+            'physical_disability' => $health('physical_disability'),
+            'weed' => $health('weed'),
+            'alcohol' => $health('alcohol'),
             'prescribed_medication' => ['nullable', 'string', 'max:2000'],
             'failed_drug_test' => ['nullable', 'string', 'max:2000'],
             'health_consent' => ['accepted'],

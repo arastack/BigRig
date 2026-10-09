@@ -33,6 +33,7 @@ return [
             'update_suspend_user_account' => 'Suspend and reactivate accounts',
             'update_verify_user_account' => 'Verify account email addresses',
             'export_students' => 'Export applicant and student lists',
+            'manage_admission_settings' => 'Edit application form questions, options and attendance threshold',
         ],
 
         'Enrolment Batches' => [

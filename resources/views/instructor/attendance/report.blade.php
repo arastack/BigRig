@@ -248,17 +248,17 @@
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
                                     <div class="flex items-center justify-center">
                                         <span class="text-sm font-bold
-                                            {{ $report['attendance_rate'] >= 75 ? 'text-green-600' : ($report['attendance_rate'] >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
+                                            {{ $report['attendance_rate'] >= \App\Support\AdmissionSettings::attendanceThreshold() ? 'text-green-600' : ($report['attendance_rate'] >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
                                             {{ $report['attendance_rate'] }}%
                                         </span>
                                     </div>
                                     <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                                        <div class="h-1.5 rounded-full {{ $report['attendance_rate'] >= 75 ? 'bg-green-600' : ($report['attendance_rate'] >= 60 ? 'bg-yellow-600' : 'bg-red-600') }}"
+                                        <div class="h-1.5 rounded-full {{ $report['attendance_rate'] >= \App\Support\AdmissionSettings::attendanceThreshold() ? 'bg-green-600' : ($report['attendance_rate'] >= 60 ? 'bg-yellow-600' : 'bg-red-600') }}"
                                              style="width: {{ $report['attendance_rate'] }}%"></div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
-                                    @if($report['attendance_rate'] >= 75)
+                                    @if($report['attendance_rate'] >= \App\Support\AdmissionSettings::attendanceThreshold())
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                             Good
                                         </span>

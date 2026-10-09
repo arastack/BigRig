@@ -1,6 +1,6 @@
 @php
     // Internal role names (SuperAdmin, IT Consultant…) are not public job titles
-    $title = $member->roles->firstWhere('portal', 'instructor')?->role_name ?? 'Management';
+    $title = $member->roles->firstWhere('portal', 'instructor')?->role_name ?? page_text('instructors.card.role');
 @endphp
 <article class="group">
     <div class="relative aspect-[4/5] overflow-hidden rounded-lg bg-ink-100">

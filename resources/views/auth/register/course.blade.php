@@ -1,13 +1,13 @@
-<h2 class="text-3xl">Choose your course</h2>
-<p class="mt-1 text-ink-500">Select one or more programmes. You can change your selection until you pay.</p>
+<h2 class="text-3xl">{{ page_text('register.course.title') }}</h2>
+<p class="mt-1 text-ink-500">{{ page_text('register.course.lead') }}</p>
 
-<div class="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" x-show="objectiveError" x-cloak role="alert">Please choose at least one course to continue.</div>
+<div class="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" x-show="objectiveError" x-cloak role="alert">{{ page_text('register.course.error') }}</div>
 @error('selected_objective')<p class="mt-4 text-sm text-red-600">{{ $message }}</p>@enderror
 
 @foreach (\App\Support\Pricing::packages() as $combo)
     <p class="mt-4 flex items-start gap-2 rounded-md bg-brand-50 px-4 py-3 text-sm text-ink-800 ring-1 ring-brand-300">
         <x-site.icon name="award" class="mt-0.5 h-4 w-4 shrink-0" />
-        <span><strong>{{ $combo['name'] }}:</strong> {{ $combo['description'] ?: 'Save ' . $currency . number_format($combo['discount']) . ' when you enrol for these courses together.' }}</span>
+        <span><strong>{{ $combo['name'] }}:</strong> {{ $combo['description'] ?: page_text('register.course.combo', [':amount' => $currency . number_format($combo['discount'])]) }}</span>
     </p>
 @endforeach
 
@@ -22,13 +22,13 @@
             <span class="min-w-0 flex-1">
                 <span class="block font-display text-2xl font-bold uppercase leading-tight text-ink-950">{{ $course->objective }}</span>
                 <span class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-500">
-                    <span>{{ $course->duration }} weeks</span>
-                    <span>{{ $course->theory_session }} theory · {{ $course->practical_session }} practical</span>
+                    <span>{{ page_text('register.course.weeks', [':weeks' => $course->duration]) }}</span>
+                    <span>{{ page_text('register.course.sessions', [':theory' => $course->theory_session, ':practical' => $course->practical_session]) }}</span>
                 </span>
                 <span class="mt-2 block font-display text-2xl font-bold text-ink-950">{{ $currency }}{{ number_format($course->price) }}</span>
                 @if ($requirements = $course->requirementList())
                     <details class="mt-2 text-sm" @click.stop>
-                        <summary class="cursor-pointer font-semibold text-ink-600 hover:text-ink-950">Entry requirements</summary>
+                        <summary class="cursor-pointer font-semibold text-ink-600 hover:text-ink-950">{{ page_text('register.course.requirements') }}</summary>
                         <ul class="mt-2 list-inside list-disc space-y-1 text-ink-500">@foreach ($requirements as $r)<li>{{ $r }}</li>@endforeach</ul>
                     </details>
                 @endif
