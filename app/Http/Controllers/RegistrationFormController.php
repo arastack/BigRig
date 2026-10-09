@@ -16,7 +16,7 @@ class RegistrationFormController extends Controller
     public function download()
     {
         $settings = Settings::first();
-        $courses = TrainingObjective::all();
+        $courses = TrainingObjective::orderByDesc('price')->get();
         $logo = $this->embeddedLogo($settings?->light_theme_logo);
 
         try {

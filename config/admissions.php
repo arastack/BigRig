@@ -22,5 +22,19 @@ return [
         'alcohol' => ['No' => 'Never', 'Daily User' => 'Daily'],
     ],
 
+    /*
+    | Package discounts. A combo applies when the selection includes at least one
+    | course from every group (courses are matched by a word in their name).
+    */
+    'combos' => [
+        [
+            'name' => 'CDL + Forklift Combo',
+            'description' => 'Enrol for truck training (Standard or Automatic) together with Forklift Training and receive a ₦50,000 discount.',
+            'groups' => [['CDL'], ['Forklift']],
+            'discount' => 50000,
+            'weeks' => 14,
+        ],
+    ],
+
     'relationships' => ['Parent', 'Spouse', 'Sibling', 'Child', 'Relative', 'Guardian', 'Friend', 'Employer'],
 ];

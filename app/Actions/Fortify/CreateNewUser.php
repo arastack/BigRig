@@ -11,6 +11,7 @@ use App\Models\TrainingObjective;
 use App\Models\User;
 use App\Notifications\ApplicationReceived;
 use App\Support\Nigeria;
+use App\Support\Pricing;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -121,16 +122,16 @@ class CreateNewUser implements CreatesNewUsers
     public static function createSubscription(User $user, array $courseIds): Subscription
     {
         $courseIds = array_values(array_unique(array_map('intval', $courseIds)));
-        $subtotal = (float) TrainingObjective::whereIn('id', $courseIds)->sum('price');
-        $tax = round($subtotal * Nigeria::VAT_RATE, 2);
+        $quote = Pricing::quote($courseIds);
 
         return Subscription::create([
             'user_id' => $user->id,
             'payment_reference' => null,
             'objectives' => $courseIds,
-            'subtotal' => $subtotal,
-            'tax' => $tax,
-            'total_amount' => $subtotal + $tax,
+            'subtotal' => $quote['subtotal'],
+            'discount' => $quote['discount'],
+            'tax' => $quote['tax'],
+            'total_amount' => $quote['total'],
             'payment_status' => 'pending',
             'payment_method' => null,
         ]);

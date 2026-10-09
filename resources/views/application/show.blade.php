@@ -170,6 +170,9 @@
                         </div>
                         <dl class="space-y-2 p-6 text-sm">
                             <div class="flex justify-between"><dt class="text-ink-500">Tuition</dt><dd>{{ $currency }}{{ number_format($subscription->subtotal, 2) }}</dd></div>
+                            @if ($subscription->discount > 0)
+                                <div class="flex justify-between text-green-700"><dt>Combo discount</dt><dd>−{{ $currency }}{{ number_format($subscription->discount, 2) }}</dd></div>
+                            @endif
                             <div class="flex justify-between"><dt class="text-ink-500">VAT (7.5%)</dt><dd>{{ $currency }}{{ number_format($subscription->tax, 2) }}</dd></div>
                         </dl>
                         <div class="space-y-3 p-6 pt-0">

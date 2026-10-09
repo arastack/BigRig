@@ -51,6 +51,16 @@
                     </tbody>
                 </table>
             </div>
+
+            @foreach (config('admissions.combos', []) as $combo)
+                <div class="mt-6 flex flex-col gap-4 rounded-lg bg-brand-400 p-6 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="font-display text-3xl font-bold uppercase text-ink-950">{{ $combo['name'] }} — save {{ $currency }}{{ number_format($combo['discount']) }}</p>
+                        <p class="mt-1 text-ink-800">{{ $combo['description'] }} Complete both in about {{ $combo['weeks'] }} weeks.</p>
+                    </div>
+                    <a href="{{ route('register') }}" class="btn-dark shrink-0">Apply for the combo</a>
+                </div>
+            @endforeach
         </div>
     </section>
 

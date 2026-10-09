@@ -234,6 +234,9 @@
                         @if ($current)
                             <dl class="space-y-1.5 text-sm">
                                 <div class="flex justify-between"><dt class="text-ink-500">Tuition</dt><dd>{{ $currency }}{{ number_format($current->subtotal, 2) }}</dd></div>
+                                @if ($current->discount > 0)
+                                    <div class="flex justify-between text-green-700"><dt>Combo discount</dt><dd>−{{ $currency }}{{ number_format($current->discount, 2) }}</dd></div>
+                                @endif
                                 <div class="flex justify-between"><dt class="text-ink-500">VAT</dt><dd>{{ $currency }}{{ number_format($current->tax, 2) }}</dd></div>
                                 <div class="flex justify-between border-t border-ink-100 pt-2 font-semibold text-ink-950"><dt>Total</dt><dd class="font-display text-2xl">{{ $currency }}{{ number_format($current->total_amount, 2) }}</dd></div>
                             </dl>

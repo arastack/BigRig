@@ -21,6 +21,7 @@ class Subscription extends Model
         'payment_reference',
         'objectives',
         'subtotal',
+        'discount',
         'tax',
         'total_amount',
         'payment_status',

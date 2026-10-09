@@ -4,6 +4,13 @@
 <div class="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" x-show="objectiveError" x-cloak role="alert">Please choose at least one course to continue.</div>
 @error('selected_objective')<p class="mt-4 text-sm text-red-600">{{ $message }}</p>@enderror
 
+@foreach (config('admissions.combos', []) as $combo)
+    <p class="mt-4 flex items-start gap-2 rounded-md bg-brand-50 px-4 py-3 text-sm text-ink-800 ring-1 ring-brand-300">
+        <x-site.icon name="award" class="mt-0.5 h-4 w-4 shrink-0" />
+        <span><strong>{{ $combo['name'] }}:</strong> {{ $combo['description'] }}</span>
+    </p>
+@endforeach
+
 <div class="mt-6 space-y-4">
     @foreach ($courses as $course)
         <label class="relative flex cursor-pointer gap-4 rounded-lg border-2 p-4 transition"

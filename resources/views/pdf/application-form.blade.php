@@ -5,6 +5,9 @@
     $ticks = fn (array $options) => collect($options)->map(fn ($o) => $box . ' ' . e($o))->join('&nbsp;&nbsp;');
     $field = fn ($label, $required = false) => '<div class="lbl">' . e($label) . ($required ? ' *' : '') . '</div><div class="line"></div>';
     $requirements = fn ($course) => collect($course->requirementList())->join('; ');
+    // Package discounts are listed straight after the last forklift course (or at the end)
+    $forklift = $courses->keys()->filter(fn ($i) => stripos($courses[$i]->objective, 'forklift') !== false)->last();
+    $comboAfter = $forklift ?? $courses->count() - 1;
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -172,6 +175,16 @@
                         <td><strong>{{ $course->duration }} Weeks</strong></td>
                         <td class="price">{!! $currency !!}{{ number_format($course->price) }}</td>
                     </tr>
+                    @if ($loop->index === $comboAfter)
+                        @foreach (config('admissions.combos', []) as $combo)
+                            <tr>
+                                <td><span class="box">&#9744;</span></td>
+                                <td><strong>{{ $combo['name'] }}</strong><div class="req">{!! str_replace('₦', $currency, e($combo['description'])) !!}</div></td>
+                                <td><strong>{{ $combo['weeks'] }} Weeks</strong></td>
+                                <td class="price">{!! $currency !!}{{ number_format($combo['discount']) }}<br>DISCOUNT</td>
+                            </tr>
+                        @endforeach
+                    @endif
                 @endforeach
             </tbody>
         </table>

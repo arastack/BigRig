@@ -22,6 +22,7 @@
 
     $courseData = $courses->map(fn ($c) => ['id' => $c->id, 'name' => $c->objective, 'price' => (float) $c->price, 'weeks' => (int) $c->duration])->values();
     $steps = ['Course', 'About you', 'Health', 'Documents'];
+    $combos = \App\Support\Pricing::combosForBrowser($courses);
 @endphp
 
 <x-site.auth title="Apply" :wide="true">
@@ -43,7 +44,7 @@
     @endunless
 
     <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data" novalidate
-          x-data="application({{ $initialStep }}, @js($courseData), @js($selected))" @submit="submit($event)"
+          x-data="application({{ $initialStep }}, @js($courseData), @js($selected), @js($combos))" @submit="submit($event)"
           class="container-site mt-8 grid gap-8 lg:grid-cols-12">
         @csrf
 
@@ -109,8 +110,9 @@
                     </ul>
                     <dl class="mt-5 space-y-2 border-t border-ink-100 pt-4 text-sm">
                         <div class="flex justify-between"><dt class="text-ink-500">Subtotal</dt><dd x-text="money(subtotal())"></dd></div>
+                        <div class="flex justify-between text-green-700" x-show="discount() > 0" x-cloak><dt x-text="combo()?.name"></dt><dd x-text="'−' + money(discount())"></dd></div>
                         <div class="flex justify-between"><dt class="text-ink-500">VAT (7.5%)</dt><dd x-text="money(vat())"></dd></div>
-                        <div class="flex justify-between border-t border-ink-100 pt-3 text-base"><dt class="font-semibold text-ink-950">Total due</dt><dd class="font-display text-2xl font-bold text-ink-950" x-text="money(subtotal() + vat())"></dd></div>
+                        <div class="flex justify-between border-t border-ink-100 pt-3 text-base"><dt class="font-semibold text-ink-950">Total due</dt><dd class="font-display text-2xl font-bold text-ink-950" x-text="money(subtotal() - discount() + vat())"></dd></div>
                     </dl>
                     <p class="mt-4 text-xs text-ink-400" x-show="weeks() > 0" x-text="'Programme length: ' + weeks() + ' weeks' + (chosen().length > 1 ? ' if taken one after another' : '')"></p>
                     @if ($activeBatch)
@@ -124,17 +126,24 @@
 
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('application', (initialStep, courses, selected) => ({
+            Alpine.data('application', (initialStep, courses, selected, combos) => ({
                 step: initialStep,
                 submitting: false,
                 courses,
                 selected,
+                combos,
                 objectiveError: false,
                 photoPreview: null,
 
                 chosen() { return this.courses.filter(c => this.selected.includes(c.id)) },
                 subtotal() { return this.chosen().reduce((sum, c) => sum + c.price, 0) },
-                vat() { return Math.round(this.subtotal() * 7.5) / 100 },
+                // Best package discount the selection qualifies for (mirrors App\\Support\\Pricing)
+                combo() {
+                    const applies = this.combos.filter(c => c.groups.every(ids => ids.some(id => this.selected.includes(id))));
+                    return applies.sort((a, b) => b.discount - a.discount)[0] || null;
+                },
+                discount() { return this.combo() ? Math.min(this.combo().discount, this.subtotal()) : 0 },
+                vat() { return Math.round((this.subtotal() - this.discount()) * 7.5) / 100 },
                 weeks() { return this.chosen().reduce((sum, c) => sum + c.weeks, 0) },
                 money(n) { return @js($currency) + n.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
 

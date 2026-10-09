@@ -58,7 +58,13 @@ class TrainingObjective extends Model
 
     public static function findBySlug(string $slug): ?self
     {
-        return static::all()->first(fn ($course) => $course->slug === Str::slug($slug));
+        $slug = Str::slug($slug);
+        $courses = static::all();
+
+        // Exact match, otherwise a renamed course whose new name extends the old one
+        // (e.g. "cdl-commercial-vehicle-training" -> "...-standard-transmission")
+        return $courses->first(fn ($course) => $course->slug === $slug)
+            ?? $courses->sortBy('id')->first(fn ($course) => str_starts_with($course->slug, $slug . '-'));
     }
 
     /**
